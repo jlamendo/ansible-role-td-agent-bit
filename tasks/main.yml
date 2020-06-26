@@ -1,0 +1,13 @@
+---
+
+- name: Deploy td-agent-bit
+  when:
+    - flb_inputs is defined
+    - ( flb_inputs.files is defined ) or ( flb_inputs.services is defined ) or ( flb_inputs.custom is defined )
+    - ( flb_inputs.files | length > 0 )  or ( flb_inputs.services | length > 0 ) or ( flb_inputs.custom | length > 0 )
+    - flb_outputs is defined and flb_outputs | length > 0
+  block:
+    - name: Install 
+      include: install.yml
+    - name: Configure
+      include: configure.yml

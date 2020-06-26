@@ -1,0 +1,8 @@
+---
+- name: Restart td-agent-bit
+  become: true
+  service:
+    name: td-agent-bit
+    state: restarted
+    enabled: true
+

@@ -1,0 +1,94 @@
+# {{ansible_managed}}
+#### BEGIN SERVICE CONFIG ####
+[SERVICE]
+    Flush        {{ flb_svc_flush }}
+    Daemon       {{ (flb_svc_daemon | bool) | ternary('On', 'Off' ) }}
+    Log_Level    {{ flb_svc_log_level }}
+    Parsers_File parsers.conf
+{% for item in flb_custom_parsers %}
+    Parsers_File /etc/td-agent-bit/parsers/{{ (item | basename).split(".j2")[0] }}
+{% endfor %}
+
+    Plugins_File plugins.conf
+    
+    HTTP_Server  {{ (flb_metrics_enable | bool) | ternary('On', 'Off' ) }}
+    {% if  (flb_metrics_enable | bool) %}
+    {% if ansible_default_ipv4["address"] | ipaddr('private') %}
+    HTTP_Listen  {{ ansible_default_ipv4["address"] | ipaddr('private') }}
+    {% elif flb_metrics_bind_cidr exists %}
+    HTTP_Listen  {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
+    {% endif %}
+    HTTP_Port    {{ flb_metrics_bind_port }}
+    {% endif %}
+    
+#### END SERVICE CONFIG ####
+
+#### BEGIN FILE INPUTS ####
+
+{% if flb_inputs.files is defined %}{% for item in flb_inputs.files %}
+[INPUT]
+    Name                tail
+    Path                {{ item.path }}
+    Buffer_Chunk_Size   {{ item.buffer_chunk_sz | Default(tail_input.buffer_chunk_sz) }}
+    Buffer_Max_Size     {{ item.buffer_max_sz | Default(tail_input.buffer_max_sz) }}
+    DB                  {{ item.state_db | Default( tail_input.state_db + '/' + ( item.path | basename ) + '.state' )}}
+    DB.Sync             {{ item.state_db_sync | Default( flb_defaults.state_db_sync )}}
+    Mem_Buf_Limit       {{ item.mem_max_sz | Default( flb_defaults.mem_max_sz )}}
+{% if item.parser is defined %}
+    Parser              {{ item.parser }}
+{% endif %}
+{% if item.tag is defined %}
+    Tag                 {{ item.tag }}
+{% endif %}
+{% endfor %}{% endif %}
+
+#### END FILE INPUTS ####
+
+#### BEGIN SERVICE INPUTS ####
+
+{% if flb_inputs.services is defined %}{% for item in flb_inputs.services %}
+[INPUT]
+    Name                systemd
+    Read_From_Tail      true
+    Strip_Underscores   true
+    Systemd_Filter      _SYSTEMD_UNIT={{ item }}.service
+    Tag                 {{ ansible_hostname }}::*
+{% endfor %}{% endif %}
+
+#### END SERVICE INPUTS ####
+
+#### BEGIN CUSTOM INPUTS ####
+
+{% if flb_inputs.custom is defined %}
+{% for input in flb_inputs.custom %}
+[INPUT]
+{% for key in input %}
+    {{ key }}           {{ input[key] }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+#### END CUSTOM INPUTS ####
+
+#### BEGIN OUTPUTS ####
+
+{% if flb_outputs is defined %}
+{% for output in flb_outputs %}
+[OUTPUT]
+{% for key in output %}
+    {{ key }} {{ output[key] }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+#### END OUTPUTS ####
+
+#### BEGIN CUSTOM INCLUDES ####
+
+{% if flb_includes is defined %}
+{% for item in flb_includes) %}
+@INCLUDE              /etc/td-agent-bit/includes/{{ (item | basename).split(".j2")[0] }}
+{% endfor %}
+{% endif %}
+
+#### END CUSTOM INCLUDES ####

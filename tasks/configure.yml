@@ -1,0 +1,67 @@
+---
+- name: Configure td-agent-bit
+  block:
+    - name: Template Out td-agent-bit.conf
+      become: true
+      template:
+        owner: root
+        group: root
+        mode: 0644
+        src: td-agent-bit.conf.j2
+        dest: /etc/td-agent-bit/td-agent-bit.conf
+      notify: Restart td-agent-bit
+
+      - name: Create Custom Includes Dir
+        become: true
+        file:
+          path: "/etc/td-agent-bit/includes"
+          state: directory
+          mode: 0644
+
+      - name: Create Custom Parsers Dir
+        become: true
+        file:
+          path: "/etc/td-agent-bit/parsers.d"
+          state: directory
+          mode: 0644
+
+      - name: Ensure Buffer Dir Exists
+        become: true
+        file:
+          path: "{{ tail_defaults.state_db }}"
+          state: directory
+          mode: 0644
+
+    - name: Template out Custom td-agent-bit Includes
+      template:
+        src: '{{ item }}'
+        dest: '/etc/td-agent-bit/includes/{{ (item | basename).split(".j2")[0] }}'
+        mode: 0644
+      with_items: '{{ flb_includes }}'
+      when: 
+        - flb_includes is defined 
+        - flb_includes | length >0
+      notify: Restart td-agent-bit
+
+    - name: Template out Custom td-agent-bit Parsers
+      template:
+        src: '{{ item }}'
+        dest: '/etc/td-agent-bit/parsers/{{ (item | basename).split(".j2")[0] }}'
+        mode: 0644
+      with_items: '{{ flb_custom_parsers }}'
+      when: 
+        - flb_custom_parsers is defined 
+        - flb_custom_parsers | length >0
+      notify: Restart td-agent-bit
+
+
+- name: Configure logrotate
+  when: 
+    - flb_inputs.files is defined and flb_inputs.files|length > 0
+    - ( flb_rotate_enabled | Default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
+    - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
+  become: true
+  template:
+    src: logrotate.d.j2
+    dest: "{{ logrotate_conf_dir }}{{ item.path | basename }}"
+  with_items: "{{ flb_inputs.files }}"

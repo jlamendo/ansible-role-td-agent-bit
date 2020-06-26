@@ -1,0 +1,136 @@
+---
+- name: Gather Service Information
+  become: true
+  service_facts:
+
+- name: Install td-agent-bit from .deb
+  when: 
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_major_version is divisibleby 2
+    - ansible_distribution_version | version('14.04', '>')
+    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+  block:
+    - name: Add td-agent-bit apt-key
+      become: true
+      apt_key: 
+        url: https://packages.fluentbit.io/fluentbit.key
+        state: present
+    - name: Add td-agent-bit apt repository
+      become: true
+      repo: 'deb https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release | lower }} {{ ansible_distribution_release | lower }} main'
+      state: present
+      filename: td-agent-bit
+      update_cache: true
+    - name: Install td-agent-bit .deb package
+      become: true
+      package:
+        name: td-agent-bit
+        state: present
+        update_cache: true
+      notify: Restart td-agent-bit
+      tags: ['install']
+      register: td_agent_installed
+
+- name: Install td-agent-bit from .rpm 
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version == "7"
+    - td_agent_installed is not defined
+    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+  block:
+    - name: Add td-agent-bit YUM Repository
+      become: true
+      yum_repository:
+        name: TD_Agent_Bit
+        baseurl: http://packages.fluentbit.io/centos/7
+        gpgcheck: true
+        gpgkey: http://packages.fluentbit.io/fluentbit.key
+        description: Fluent bit repo
+        enabled: true
+    - name: Install td-agent-bit .rpm package
+      become: true
+      package:
+        name: td-agent-bit
+        state: present
+        update_cache: true
+      notify: Restart td-agent-bit
+      tags: ['install']
+      register: td_agent_installed
+
+
+- name: Compile td-agent-bit From Sources [ FALLBACK ]
+  when: 
+    - td_agent_installed is not defined or td_agent_installed.rc != 0
+    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+  block:
+      - name: Install Build Dependencies
+        when: ansible_os_family == "Debian"
+        become: true
+        package:
+          state: present
+          name:
+          - build-essential
+          - cmake
+      - name: Install Build Dependencies
+        when: ansible_os_family == "RedHat"
+        become: true
+        yum:
+          name: 
+            - "@Development tools"
+            - cmake
+          state: present
+      - name: Create Build Directory
+        become: true
+        file:
+          path: "{{ flb_build_dir }}"
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: 0775
+      - name: Download td-agent-bit Sources
+        become: true
+        unarchive:
+          src: https://fluentbit.io/releases/{{ flb_build_vers.split(".")[0] }}.{{ flb_build_vers.split(".")[1] }}/fluent-bit-{{ flb_build_vers }}.tar.gz
+          dest: "{{ flb_build_dir }}"
+          remote_src: yes
+      - name: Configure td-agent-bit
+        command:
+          chdir: "{{ flb_build_dir }}"
+          argv:
+            - /usr/bin/cmake
+            - ..
+            - "-DFLB_JEMALLOC=ON"
+            - "-DFLB_TLS=ON"
+            - "-DFLB_BUFFERING=ON"
+            - "-DFLB_WITHOUT_EXAMPLES=ON"
+            - "-DFLB_TD=ON"
+      - name: Compile td-agent-bit
+        make:
+          chdir: "{{ flb_build_dir }}"
+          target: all
+          params:
+            NUM_THREADS: 2
+      - name: Install td-agent-bit
+        become: true
+        make:
+          chdir: "{{ flb_build_dir }}"
+          target: install
+        notify: Restart td-agent-bit
+
+
+- name: Ensure td-agent-bit Service is enabled and started
+  become: true
+  when: 
+    - "'td-agent-bit' in ansible_facts.services or 'td-agent-bit.service' in ansible_facts.services"
+  service:
+    name: td-agent-bit
+    enabled: yes
+    state: started
+
+- name: Install logrotate
+  when: 
+    - flb_inputs.files is defined and flb_inputs.files|length > 0
+  become: true
+  package:
+    name: logrotate
+    state: present
