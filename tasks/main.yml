@@ -1,5 +1,4 @@
 ---
-
 - name: Deploy td-agent-bit
   when:
     - flb_inputs is defined

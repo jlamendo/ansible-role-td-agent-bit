@@ -2,11 +2,9 @@
 
 flb_svc_flush: 5
 
-
 # !DO NOT ENABLE IF SERVICE IS MANAGED BY INIT SYSTEM!
 flb_svc_daemon: false
 # !DO NOT ENABLE IF SERVICE IS MANAGED BY INIT SYSTEM!
-
 
 flb_svc_log_level: info
 
@@ -17,8 +15,9 @@ flb_metrics_bind_port: 9000
 flb_build_vers: "1.4.6"
 flb_build_dir: "/usr/src/td-agent-bit"
 
-flb_buffer_chunk_sz: 512k
-flb_buffer_max_sz: 5M
+###############################################################################
+## Tail Input Default Configuration
+###############################################################################
 
 tail_input:
   buffer_chunk_sz: 512k
@@ -26,12 +25,6 @@ tail_input:
   state_db: /var/log/.flb-buffer
   state_db_sync: Normal
   mem_max_sz: 56M
-
-# flb_custom_parsers:
-#   - ./templates/parsers/json_parsers.conf.j2
-
-# flb_custom_includes:
-#   - ./templates/includes/custom_dynamic_output.conf.j2
 
 ###############################################################################
 ## Automatic Logrotate Configuration
@@ -44,33 +37,5 @@ flb_rotate_retention: 0
 flb_rotate_maxsize: 5M
 flb_rotate_strategy: copytruncate
 
-# flb_rotate_scripts:
-#   - name: postrotate
-#     script: "/usr/bin/systemctl restart apache"
-
 ###############################################################################
-
-
-# flb_inputs:
-#   files:
-#     - path: "/var/log/syslog"
-#       parser: "syslog-rfc3164-local"
-#   services:
-#     - sshd
-# custom:
-#   - Name: systemd
-#     Read_From_Tail: true
-#     Strip_Underscores: true
-#     Systemd_Filter: _SYSTEMD_UNIT=sshd.service
-#     Tag: "{{ ansible_hostname }}::*"
-
-# flb_outputs:
-#   - Name: splunk
-#     Match: "*"
-#     Host: "{{ SPLUNK_HOST }}"
-#     Port: "{{ SPLUNK_PORT }}"
-#     Splunk_Token: "{{ SPLUNK_TOKEN }}"
-#     TLS: "On"
-#     TLS.Verify: "Off"
-#     Message_Key: "log"
 

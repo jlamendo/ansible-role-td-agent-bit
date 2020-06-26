@@ -54,7 +54,6 @@
         - flb_custom_parsers | length >0
       notify: Restart td-agent-bit
 
-
 - name: Configure logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0

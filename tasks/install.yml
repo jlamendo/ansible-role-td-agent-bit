@@ -61,7 +61,6 @@
       tags: ['install']
       register: td_agent_installed
 
-
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when:
     - td_agent_installed is not defined or td_agent_installed.rc != 0
@@ -120,7 +119,6 @@
           chdir: "{{ flb_build_dir }}"
           target: install
         notify: Restart td-agent-bit
-
 
 - name: Ensure td-agent-bit Service is enabled and started
   become: true
