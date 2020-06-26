@@ -11,6 +11,35 @@ ansible-galaxy install jlamendo.td-agent-bit
 ```
 
 
+##  Example Playbook:
+```
+---
+- hosts: all
+  vars:
+    SPLUNK_HOST: "splunk.example.com"
+    SPLUNK_PORT: "8088"
+    SPLUNK_TOKEN: ""
+    flb_outputs:
+      - Name: splunk
+        Match: "*"
+        Host: "{{ SPLUNK_HOST }}"
+        Port: "{{ SPLUNK_PORT }}"
+        Splunk_Token: "{{ SPLUNK_TOKEN }}"
+        TLS: "On"
+        TLS.Verify: "On"
+        Message_Key: "log"
+    flb_inputs:
+      files:
+        - path: "/var/log/syslog"
+          parser: "syslog-rfc3164-local"
+      services:
+        - sshd
+  gather_facts: true
+  roles:
+    - jlamendo.td-agent-bit
+```
+
+
 ## Role Variables:
 
 ### td-agent-bit Service Variables
@@ -187,34 +216,6 @@ The files key is a list of entries that will be templated into individual `[INPU
 
 ## Dependencies:
 None.
-
-##  Example Playbook:
-```
----
-- hosts: all
-  vars:
-    SPLUNK_HOST: "splunk.example.com"
-    SPLUNK_PORT: "8088"
-    SPLUNK_TOKEN: ""
-    flb_outputs:
-      - Name: splunk
-        Match: "*"
-        Host: "{{ SPLUNK_HOST }}"
-        Port: "{{ SPLUNK_PORT }}"
-        Splunk_Token: "{{ SPLUNK_TOKEN }}"
-        TLS: "On"
-        TLS.Verify: "On"
-        Message_Key: "log"
-    flb_inputs:
-      files:
-        - path: "/var/log/syslog"
-          parser: "syslog-rfc3164-local"
-      services:
-        - sshd
-  gather_facts: true
-  roles:
-    - jlamendo.td-agent-bit
-```
 
 ## Author: 
 - [Jon Lamendola](https://blog.vrtx.ai)
