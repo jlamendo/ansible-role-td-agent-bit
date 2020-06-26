@@ -1,41 +1,31 @@
 ---
-
 flb_svc_flush: 5
-
 # !DO NOT ENABLE IF SERVICE IS MANAGED BY INIT SYSTEM!
 flb_svc_daemon: false
 # !DO NOT ENABLE IF SERVICE IS MANAGED BY INIT SYSTEM!
-
 flb_svc_log_level: info
-
 flb_metrics_enable: false
 flb_metrics_bind_cidr: 172.16.0.0/12
 flb_metrics_bind_port: 9000
-
 flb_build_vers: "1.4.6"
 flb_build_dir: "/usr/src/td-agent-bit"
-
 ###############################################################################
 ## Tail Input Default Configuration
 ###############################################################################
-
 tail_input:
   buffer_chunk_sz: 512k
   buffer_max_sz: 5M
   state_db: /var/log/.flb-buffer
   state_db_sync: Normal
   mem_max_sz: 56M
-
 ###############################################################################
 ## Automatic Logrotate Configuration
 ###############################################################################
-
 flb_rotate_enabled: true
 flb_rotate_interval: "hourly"
 flb_rotate_missingok: true
 flb_rotate_retention: 0
 flb_rotate_maxsize: 5M
 flb_rotate_strategy: copytruncate
-
 ###############################################################################
 

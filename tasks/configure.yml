@@ -10,28 +10,24 @@
         src: td-agent-bit.conf.j2
         dest: /etc/td-agent-bit/td-agent-bit.conf
       notify: Restart td-agent-bit
-
     - name: Create Custom Includes Dir
       become: true
       file:
         path: "/etc/td-agent-bit/includes"
         state: directory
         mode: 0644
-
     - name: Create Custom Parsers Dir
       become: true
       file:
         path: "/etc/td-agent-bit/parsers.d"
         state: directory
         mode: 0644
-
     - name: Ensure Buffer Dir Exists
       become: true
       file:
         path: "{{ tail_defaults.state_db }}"
         state: directory
         mode: 0644
-
     - name: Template out Custom td-agent-bit Includes
       template:
         src: '{{ item }}'
@@ -42,7 +38,6 @@
         - flb_includes is defined
         - flb_includes | length >0
       notify: Restart td-agent-bit
-
     - name: Template out Custom td-agent-bit Parsers
       template:
         src: '{{ item }}'
@@ -53,7 +48,6 @@
         - flb_custom_parsers is defined
         - flb_custom_parsers | length >0
       notify: Restart td-agent-bit
-
 - name: Configure logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0

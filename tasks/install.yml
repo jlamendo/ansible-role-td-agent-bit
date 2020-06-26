@@ -2,7 +2,6 @@
 - name: Gather Service Information
   become: true
   service_facts:
-
 - name: Install td-agent-bit from .deb
   when:
     - ansible_distribution in ["Ubuntu","Debian"]
@@ -34,7 +33,6 @@
       notify: Restart td-agent-bit
       tags: ['install']
       register: td_agent_installed
-
 - name: Install td-agent-bit from .rpm
   when:
     - ansible_os_family == "RedHat"
@@ -60,7 +58,6 @@
       notify: Restart td-agent-bit
       tags: ['install']
       register: td_agent_installed
-
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when:
     - td_agent_installed is not defined or td_agent_installed.rc != 0
@@ -119,7 +116,6 @@
           chdir: "{{ flb_build_dir }}"
           target: install
         notify: Restart td-agent-bit
-
 - name: Ensure td-agent-bit Service is enabled and started
   become: true
   when:
@@ -128,7 +124,6 @@
     name: td-agent-bit
     enabled: yes
     state: started
-
 - name: Install logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
