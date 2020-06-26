@@ -7,7 +7,7 @@
     - ( flb_inputs.files | length > 0 )  or ( flb_inputs.services | length > 0 ) or ( flb_inputs.custom | length > 0 )
     - flb_outputs is defined and flb_outputs | length > 0
   block:
-    - name: Install 
+    - name: Install
       include: install.yml
     - name: Configure
       include: configure.yml

@@ -25,6 +25,6 @@ galaxy_info:
       - 28
       - 29
       - 30
-  categories:
+  galaxy_tags:
   - system
 dependencies: []
