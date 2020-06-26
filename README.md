@@ -47,19 +47,21 @@ ansible-galaxy install jlamendo.td-agent-bit
 #### flb_custom_parsers
 - Description: A list of custom parser files that will be templated out and injected into the td-agent-bit configuration.
 - Default: none
-- Example: ``` 
-flb_custom_parsers:
-  - ./templates/parsers/json_parsers.conf.j2
-```
-_Note: You can see the built-in parsers [here](https://github.com/fluent/fluent-bit/blob/master/conf/parsers.conf). Be sure to look at this before writing your own custom parser, as it is likely one already exists that will fit your need._
+- Example: 
+>``` 
+>flb_custom_parsers:
+>  - ./templates/parsers/json_parsers.conf.j2
+>```
+>_Note: You can see the built-in parsers [here](https://github.com/fluent/fluent-bit/blob/master/conf/parsers.conf). Be sure to look at this before writing your own custom parser, as it is likely one already exists that will fit your need._
 
 #### flb_custom_includes
 - Description: A list of files that will be included into the main td-agent-bit config file via `@INCLUDE` statements.
 - Default: none
-- Example: ``` 
-flb_custom_includes:
-  - ./templates/includes/custom_dynamic_output.conf.j2
-```
+- Example: 
+>```
+>flb_custom_includes:
+>  - ./templates/includes/custom_dynamic_output.conf.j2
+>```
 
 ### Tail Default Variables
 _Note: All of the tail plugin defaults can also be set on a per-input basis, using the same syntax._
@@ -114,17 +116,18 @@ This role automatically generates logrotate configs for each input defined via `
 #### flb_rotate_scripts
 - Description: Custom scripts for logrotate to run at defined phases of the log rotation lifecycle.
 - Default: none
-- Example: ```
-  flb_rotate_scripts:
-  - name: postrotate
-    script: "/usr/bin/systemctl restart apache"
-  ```
+- Example: 
+>```
+>  flb_rotate_scripts:
+>    - name: postrotate
+>      script: "/usr/bin/systemctl restart apache"
+>```
 
 ## Host/Group Variables:
 These options primarily define the per-host/group settings you will use to monitor specific log files, services, and other input sources supported by td-agent-bit.
 
 ### flb_inputs.files
-The files key is a list of entries that will be templated into individual `[INPUT]` sections using the tail plugin in the td-agent-bit configuration. This option is primarily a convenience that is intended to significantly reduce the effort required to monitor lots of files on lots of hosts, and won't be suitable for every need. If more custom configuration is necessary, or if you want to be closer to the config and have less configured for you automatically, a custom input entry is a better choice. In addition to the options listed here, each entry can also be configured with all of the options listed in the [Tail Defaults](#Tail Default Variables) and [Auto-Logrotate Variables](# Auto-Logrotate Variables) sections.
+The files key is a list of entries that will be templated into individual `[INPUT]` sections using the tail plugin in the td-agent-bit configuration. This option is primarily a convenience that is intended to significantly reduce the effort required to monitor lots of files on lots of hosts, and won't be suitable for every need. If more custom configuration is necessary, or if you want to be closer to the config and have less configured for you automatically, a custom input entry is a better choice. In addition to the options listed here, each entry can also be configured with all of the options listed in the [Tail Defaults](#tail-default-variables) and [Auto-Logrotate Variables](#auto-logrotate-variables) sections.
 
 
 #### flb_inputs.files[].path
@@ -146,37 +149,40 @@ The files key is a list of entries that will be templated into individual `[INPU
 #### flb_inputs.services
 - Description: A very simple input format that accepts a list of strings that represent the names of services running on the target host. td-agent-bit will then tail the journald entries for these services. No logrotate configuration is generated, because journald handles this and none is needed.
 - Default: none
-- Example: ```
-  flb_inputs.services:
-    - sshd
-  ```
+- Example: 
+>```
+>  flb_inputs.services:
+>    - sshd
+>```
 
 #### flb_inputs.custom:
 - Description: Custom inputs for td-agent-bit. No changes are made to the config, instead this is a 1:1 map from YAML to the td-agent-bit config. Keys are case-sensitive.
 - Default: none
-- Example: ```
-  flb_inputs.custom:
-    - Name: systemd
-      Read_From_Tail: true
-      Strip_Underscores: true
-      Systemd_Filter: _SYSTEMD_UNIT=sshd.service
-      Tag: "{{ ansible_hostname }}::*"
-  ```
+- Example: 
+>```
+>  flb_inputs.custom:
+>    - Name: systemd
+>      Read_From_Tail: true
+>      Strip_Underscores: true
+>      Systemd_Filter: _SYSTEMD_UNIT=sshd.service
+>      Tag: "{{ ansible_hostname }}::*"
+>```
 
 #### flb_outputs:
 - Description: Configuration of outputs for td-agent-bit. Similar to custom inputs, this is a 1:1 YAML:config mapping, and no changes are made.
 - Default: none
-- Example: ```
-  flb_outputs:
-    - Name: splunk
-      Match: "*"
-      Host: "{{ SPLUNK_HOST }}"
-      Port: "{{ SPLUNK_PORT }}"
-      Splunk_Token: "{{ SPLUNK_TOKEN }}"
-      TLS: "On"
-      TLS.Verify: "Off"
-      Message_Key: "log"
-  ```
+- Example: 
+>```
+>  flb_outputs:
+>    - Name: splunk
+>      Match: "*"
+>      Host: "{{ SPLUNK_HOST }}"
+>      Port: "{{ SPLUNK_PORT }}"
+>      Splunk_Token: "{{ SPLUNK_TOKEN }}"
+>      TLS: "On"
+>      TLS.Verify: "Off"
+>      Message_Key: "log"
+>```
 
 
 ## Dependencies:
