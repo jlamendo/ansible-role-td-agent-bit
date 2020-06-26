@@ -28,4 +28,3 @@ flb_rotate_retention: 0
 flb_rotate_maxsize: 5M
 flb_rotate_strategy: copytruncate
 ###############################################################################
-
