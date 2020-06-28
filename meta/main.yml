@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  role_name: td-agent-bit
   author: Jon Lamendola
   description: Role for td-agent-bit on Debian+RedHat, with auto-logrotate for Tail inputs out of the box.
   license: MIT
