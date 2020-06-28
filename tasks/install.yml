@@ -79,14 +79,18 @@
           state: present
           name:
           - build-essential
-          - cmake
+          - cmake3
+          - bison
           - libbison-dev
+          - flex
           - libfl-dev
           - pkg-config
+          - zlibc
           - zlib1g-dev
           - libpq-dev
           - doxygen
           - libgtest-dev
+          - libevent-dev
       - name: Install Build Dependencies
         when: ansible_os_family == "RedHat"
         become: true
