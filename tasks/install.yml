@@ -86,7 +86,7 @@
           - zlib1g-dev
           - libpq-dev
           - doxygen
-          - libtest-dev
+          - libgtest-dev
       - name: Install Build Dependencies
         when: ansible_os_family == "RedHat"
         become: true
