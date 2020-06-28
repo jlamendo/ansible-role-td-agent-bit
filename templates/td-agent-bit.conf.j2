@@ -11,7 +11,7 @@
 
     Plugins_File plugins.conf
     
-    HTTP_Server  {{ (flb_metrics_enable | bool) | ternary('On', 'Off' ) }}
+    HTTP_Server  {{ (flb_metrics_enable | bool) | ternary('On', 'Off') }}
     {% if  (flb_metrics_enable | bool) %}
     {% if ansible_default_ipv4["address"] | ipaddr('private') %}
     HTTP_Listen  {{ ansible_default_ipv4["address"] | ipaddr('private') }}
@@ -88,7 +88,7 @@
 #### BEGIN CUSTOM INCLUDES ####
 
 {% if flb_includes is defined %}
-{% for item in flb_includes) %}
+{% for item in flb_includes %}
 @INCLUDE              {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
 {% endif %}
