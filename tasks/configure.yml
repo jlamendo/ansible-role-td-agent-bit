@@ -1,6 +1,12 @@
 ---
 - name: Configure td-agent-bit
   block:
+    - name: Ensure Conf Dir Exists
+      become: true
+      file:
+        path: "{{ flb_conf_dir }}"
+        state: directory
+        mode: 0644
     - name: Template Out td-agent-bit.conf
       become: true
       template:
@@ -8,18 +14,18 @@
         group: root
         mode: 0644
         src: td-agent-bit.conf.j2
-        dest: /etc/td-agent-bit/td-agent-bit.conf
+        dest: "{{ flb_conf_dir }}/{{ flb_conf_file }}"
       notify: Restart td-agent-bit
     - name: Create Custom Includes Dir
       become: true
       file:
-        path: "/etc/td-agent-bit/includes"
+        path: "{{ flb_conf_dir }}/includes"
         state: directory
         mode: 0644
     - name: Create Custom Parsers Dir
       become: true
       file:
-        path: "/etc/td-agent-bit/parsers.d"
+        path: "{{ flb_conf_dir }}/parsers.d"
         state: directory
         mode: 0644
     - name: Ensure Buffer Dir Exists
@@ -31,7 +37,7 @@
     - name: Template out Custom td-agent-bit Includes
       template:
         src: '{{ item }}'
-        dest: '/etc/td-agent-bit/includes/{{ (item | basename).split(".j2")[0] }}'
+        dest: '{{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}'
         mode: 0644
       with_items: '{{ flb_includes }}'
       when:
@@ -41,7 +47,7 @@
     - name: Template out Custom td-agent-bit Parsers
       template:
         src: '{{ item }}'
-        dest: '/etc/td-agent-bit/parsers/{{ (item | basename).split(".j2")[0] }}'
+        dest: '{{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}'
         mode: 0644
       with_items: '{{ flb_custom_parsers }}'
       when:

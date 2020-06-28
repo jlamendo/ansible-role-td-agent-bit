@@ -6,7 +6,7 @@
     Log_Level    {{ flb_svc_log_level }}
     Parsers_File parsers.conf
 {% for item in flb_custom_parsers %}
-    Parsers_File /etc/td-agent-bit/parsers/{{ (item | basename).split(".j2")[0] }}
+    Parsers_File {{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
 
     Plugins_File plugins.conf
@@ -89,7 +89,7 @@
 
 {% if flb_includes is defined %}
 {% for item in flb_includes) %}
-@INCLUDE              /etc/td-agent-bit/includes/{{ (item | basename).split(".j2")[0] }}
+@INCLUDE              {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
 {% endif %}
 

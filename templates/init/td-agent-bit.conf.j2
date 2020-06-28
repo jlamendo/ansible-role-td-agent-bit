@@ -1,0 +1,10 @@
+# td-agent-bit - ligtweight log shipping for fluent
+
+description "TD Agent Bit"
+
+# start in normal runlevels when disks are mounted and networking is available
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+exec {{ flb_binary }} -c {{ flb_config_dir }}/{{ flb_config_file }}

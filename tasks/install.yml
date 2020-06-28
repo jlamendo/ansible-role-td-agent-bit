@@ -137,7 +137,39 @@
         make:
           chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
           target: install
-        notify: Restart td-agent-bit
+      - name: Gather Service Information
+        become: true
+        service_facts:
+      - name: Stat td-agent-bin Upstart Service File
+        become: true
+        stat:
+          path: "{{ flb_upstart_script }}"
+        register: flb_upstart_script_stat
+        when: ansible_service_mgr | lower == 'upstart'
+      - name: Manually Install Upstart Script
+        when:
+          - flb_upstart_script_stat.stat is not defined or not flb_upstart_script_stat.stat.exists
+        block:
+          - name: Find td-agent-bit binary location
+            shell: "which td-agent-bit | tr -d '[:space:]'"
+            register: flb_binary_location
+          - name: Set flb_binary Fact
+            set_fact:
+              flb_binary: "{{ flb_binary_location.stdout }}"
+          - name: Template out td-agent-bit upstart file if needed
+            become: true
+            template:
+              src: 'init/td-agent-bit.conf.j2'
+              dest: '/etc/init/td-agent-bit.conf'
+              mode: 0644
+              owner: root
+            notify: Restart td-agent-bit
+          - name: Reload initctl Configuration
+            become: true
+            command: "initctl reload-configuration"
+      - name: Gather Service Information
+        become: true
+        service_facts:
 - name: Ensure td-agent-bit Service is enabled and started
   become: true
   when:
