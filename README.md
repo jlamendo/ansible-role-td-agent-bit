@@ -7,7 +7,7 @@ Includes extremely simple interfaces for Tail and SystemD inputs, and the capabi
 
 ## Installation:
 ```
-ansible-galaxy install jlamendo.ansible_role_td_agent_bit
+ansible-galaxy install jlamendo.td_agent_bit
 ```
 
 
@@ -36,7 +36,7 @@ ansible-galaxy install jlamendo.ansible_role_td_agent_bit
         - sshd
   gather_facts: true
   roles:
-    - jlamendo.td-agent-bit
+    - jlamendo.td_agent_bit
 ```
 
 

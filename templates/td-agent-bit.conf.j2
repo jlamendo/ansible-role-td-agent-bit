@@ -15,7 +15,7 @@
     {% if  (flb_metrics_enable | bool) %}
     {% if ansible_default_ipv4["address"] | ipaddr('private') %}
     HTTP_Listen  {{ ansible_default_ipv4["address"] | ipaddr('private') }}
-    {% elif flb_metrics_bind_cidr exists %}
+    {% elif flb_metrics_bind_cidr is defined %}
     HTTP_Listen  {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
     {% endif %}
     HTTP_Port    {{ flb_metrics_bind_port }}
