@@ -7,4 +7,4 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 
 respawn
-exec {{ flb_binary }} -c {{ flb_config_dir }}/{{ flb_config_file }}
+exec {{ flb_binary }} -c {{ flb_conf_dir }}/{{ flb_conf_file }}
