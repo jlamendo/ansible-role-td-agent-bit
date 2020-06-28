@@ -46,6 +46,7 @@
 
 #### BEGIN SERVICE INPUTS ####
 
+{%- if ansible_service_mgr == "systemd" -%}
 {% if flb_inputs.services is defined %}{% for item in flb_inputs.services %}
 [INPUT]
     Name                systemd
@@ -54,6 +55,7 @@
     Systemd_Filter      _SYSTEMD_UNIT={{ item }}.service
     Tag                 {{ ansible_hostname }}::*
 {% endfor %}{% endif %}
+{%- endif -%}
 
 #### END SERVICE INPUTS ####
 
