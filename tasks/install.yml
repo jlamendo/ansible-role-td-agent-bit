@@ -3,12 +3,12 @@
   become: true
   service_facts:
 - name: Service Monitoring Sanity Test
-  when: 
+  when:
     - ansible_service_mgr != "systemd"
     - flb_inputs.services is defined
     - flb_inputs.services | length > 0
   fail:
-    msg: 'SystemD Service "{{item}}" is marked for monitoring, but target system init is "{{ ansible_service_mgr }}"! Service will not be monitored.'
+    msg: 'SystemD Service "{{ item }}" is marked for monitoring, but target system init is "{{ ansible_service_mgr }}"! Service will not be monitored.'
   with_items: '{{ flb_inputs.services }}'
   ignore_errors: yes
 - name: Install td-agent-bit from .deb
@@ -119,7 +119,7 @@
             - "-DFLB_BUFFERING=ON"
             - "-DFLB_WITHOUT_EXAMPLES=ON"
             - "-DFLB_TD=ON"
-            - "-DFLB_IN_SYSTEMD={{ ((ansible_service_mgr | lower) == "systemd") | ternary("ON","OFF") }}"
+            - "-DFLB_IN_SYSTEMD={{ ansible_service_mgr | lower == 'systemd' | ternary('ON','OFF') }}"
       - name: Compile td-agent-bit
         make:
           chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
