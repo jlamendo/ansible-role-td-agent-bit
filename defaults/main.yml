@@ -13,6 +13,7 @@ flb_binary: "/usr/local/bin/td-agent-bit"
 flb_build_vers: "1.4.6"
 flb_build_dir: "/usr/src/td-agent-bit"
 flb_upstart_script: "/etc/init/td-agent-bit.conf"
+logrotate_conf_dir: "/etc/logrotate.d/"
 
 ###############################################################################
 ## Tail Input Default Configuration

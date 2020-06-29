@@ -5,11 +5,11 @@
     Daemon       {{ (flb_svc_daemon | bool) | ternary('On', 'Off' ) }}
     Log_Level    {{ flb_svc_log_level }}
     Parsers_File parsers.conf
-{%- if flb_custom_parsers is defined -%}
+{% if flb_custom_parsers is defined %}
 {% for item in flb_custom_parsers %}
     Parsers_File {{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
-{%- endif -%}
+{% endif %}
 
     Plugins_File plugins.conf
     
@@ -48,7 +48,7 @@
 
 #### BEGIN SERVICE INPUTS ####
 
-{%- if ansible_service_mgr == "systemd" -%}
+{% if ansible_service_mgr == "systemd" %}
 {% if flb_inputs.services is defined %}{% for item in flb_inputs.services %}
 [INPUT]
     Name                systemd
@@ -57,7 +57,7 @@
     Systemd_Filter      _SYSTEMD_UNIT={{ item }}.service
     Tag                 {{ ansible_hostname }}::*
 {% endfor %}{% endif %}
-{%- endif -%}
+{% endif %}
 
 #### END SERVICE INPUTS ####
 
@@ -80,7 +80,7 @@
 {% for output in flb_outputs %}
 [OUTPUT]
 {% for key in output %}
-    {{ key }} {{ output[key] }}
+    {{ key }}           {{ output[key] }}
 {% endfor %}
 {% endfor %}
 {% endif %}

@@ -9,7 +9,7 @@
   {%- endfor -%}
   {%- else -%}
   {{ item.rotate_interval | default(flb_rotate_interval) }}
-  maxsize {{ item.rotate_size | default(flb_rotate_size) }}
+  maxsize {{ item.rotate_size | default(flb_rotate_maxsize) }}
   rotate {{ item.rotate_retention | default(flb_rotate_retention) }}
   {{ item.rotate_strategy | default(flb_rotate_strategy) }}
   {%- if item.rotate_missingok | default(flb_rotate_missingok) -%}
