@@ -57,10 +57,12 @@
 - name: Check for logrotate Duplicates
   become: true
   shell: >-
+    set -o pipefail;
     for file in $( ls -d {{ flb_logrotate_conf_dir | quote }}* | grep -v "{{ flb_logrotate_prefix | quote }}");
     do cat $file | grep -v '^#' | tr '\n' " " | sed 's;\([^{]*\){.*;\1;' | sed 's;  [ ]*; ;gm' |
-    tr " " "\n" | tr -d \" | grep "/"; done  
+    tr " " "\n" | tr -d \" | grep "/"; done
   register: logrotate_watched_files
+  changed_when: logrotate_watched_files.rc == 0
 - name: Warn about duplicate logrotates
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
