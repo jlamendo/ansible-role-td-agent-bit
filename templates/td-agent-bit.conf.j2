@@ -29,11 +29,11 @@
 [INPUT]
     Name                tail
     Path                {{ item.path }}
-    Buffer_Chunk_Size   {{ item.buffer_chunk_sz | Default(tail_input.buffer_chunk_sz) }}
-    Buffer_Max_Size     {{ item.buffer_max_sz | Default(tail_input.buffer_max_sz) }}
-    DB                  {{ item.state_db | Default( tail_input.state_db + '/' + ( item.path | basename ) + '.state' )}}
-    DB.Sync             {{ item.state_db_sync | Default( flb_defaults.state_db_sync )}}
-    Mem_Buf_Limit       {{ item.mem_max_sz | Default( flb_defaults.mem_max_sz )}}
+    Buffer_Chunk_Size   {{ item.buffer_chunk_sz | default(tail_input.buffer_chunk_sz) }}
+    Buffer_Max_Size     {{ item.buffer_max_sz | default(tail_input.buffer_max_sz) }}
+    DB                  {{ item.state_db | default( tail_input.state_db + '/' + ( item.path | basename ) + '.state' )}}
+    DB.Sync             {{ item.state_db_sync | default( flb_defaults.state_db_sync )}}
+    Mem_Buf_Limit       {{ item.mem_max_sz | default( flb_defaults.mem_max_sz )}}
 {% if item.parser is defined %}
     Parser              {{ item.parser }}
 {% endif %}

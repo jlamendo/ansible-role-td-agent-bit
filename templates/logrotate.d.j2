@@ -8,11 +8,11 @@
   {{ option }}
   {%- endfor -%}
   {%- else -%}
-  {{ item.rotate_interval | Default(flb_rotate_interval) }}
-  maxsize {{ item.rotate_size | Default(flb_rotate_size) }}
-  rotate {{ item.rotate_retention | Default(flb_rotate_retention) }}
-  {{ item.rotate_strategy | Default(flb_rotate_strategy) }}
-  {%- if item.rotate_missingok | Default(flb_rotate_missingok) -%}
+  {{ item.rotate_interval | default(flb_rotate_interval) }}
+  maxsize {{ item.rotate_size | default(flb_rotate_size) }}
+  rotate {{ item.rotate_retention | default(flb_rotate_retention) }}
+  {{ item.rotate_strategy | default(flb_rotate_strategy) }}
+  {%- if item.rotate_missingok | default(flb_rotate_missingok) -%}
   missingok
   {%- endif -%}
   {%- endif -%}

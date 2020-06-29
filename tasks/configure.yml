@@ -57,7 +57,7 @@
 - name: Configure logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
-    - ( flb_rotate_enabled | Default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
+    - ( flb_rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
     - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
   become: true
   template:
