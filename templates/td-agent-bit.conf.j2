@@ -80,7 +80,7 @@
 {% for output in flb_outputs %}
 [OUTPUT]
 {% for key in output %}
-    {{ key }}           {{ output[key] }}
+    {{ "%-20s" | format(key,) }}{{ output[key] }}
 {% endfor %}
 {% endfor %}
 {% endif %}
