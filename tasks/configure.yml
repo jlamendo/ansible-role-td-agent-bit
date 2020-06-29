@@ -57,11 +57,9 @@
 - name: Check for logrotate Duplicates
   become: true
   shell: >-
-    echo "$(
-      for file in $( ls "{{ flb_logrotate_conf_dir | quote }}/*" | grep -v "{{ flb_logrotate_prefix }}"); do
-        cat $file | grep -v '^#' | tr "\\n" " " | sed 's;\\([^{]*\\){.*;\\1;' | sed 's;  [ ]*; ;gm' | tr " " "\\n";
-      done
-    )"
+    for file in $( ls -d {{ flb_logrotate_conf_dir | quote }}* | grep -v "{{ flb_logrotate_prefix | quote }}");
+    do cat $file | grep -v '^#' | tr '\n' " " | sed 's;\([^{]*\){.*;\1;' | sed 's;  [ ]*; ;gm' |
+    tr " " "\n" | tr -d \" | grep "/"; done  
   register: logrotate_watched_files
 - name: Warn about duplicate logrotates
   when:
