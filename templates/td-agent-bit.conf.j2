@@ -1,33 +1,39 @@
 # {{ansible_managed}}
 #### BEGIN SERVICE CONFIG ####
 [SERVICE]
-    Flush        {{ flb_svc_flush }}
-    Daemon       {{ (flb_svc_daemon | bool) | ternary('On', 'Off' ) }}
-    Log_Level    {{ flb_svc_log_level }}
-    Parsers_File parsers.conf
-{% if flb_custom_parsers is defined %}
+    Flush               {{ flb_svc_flush }}
+    Daemon              {{ (flb_svc_daemon | bool) | ternary('On', 'Off' ) }}
+    Log_Level           {{ flb_svc_log_level }}
+    Parsers_File        parsers.conf
+    Plugins_File        plugins.conf
+{% if flb_custom_parsers is defined and ( flb_custom_parsers | length > 0 ) %}
+#### SERVICE CONFIG     => BEGIN CUSTOM PARSERS ####
 {% for item in flb_custom_parsers %}
-    Parsers_File {{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}
+    Parsers_File        {{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
+#### SERVICE CONFIG     => END CUSTOM PARSERS   ####
 {% endif %}
 
-    Plugins_File plugins.conf
-    
-    HTTP_Server  {{ (flb_metrics_enable | bool) | ternary('On', 'Off') }}
+
+#### SERVICE CONFIG     => BEGIN METRICS CONFIG ####
+    HTTP_Server         {{ (flb_metrics_enable | bool) | ternary('On', 'Off') }}
     {% if  (flb_metrics_enable | bool) %}
     {% if ansible_default_ipv4["address"] | ipaddr('private') %}
-    HTTP_Listen  {{ ansible_default_ipv4["address"] | ipaddr('private') }}
+    HTTP_Listen         {{ ansible_default_ipv4["address"] | ipaddr('private') }}
     {% elif flb_metrics_bind_cidr is defined %}
-    HTTP_Listen  {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
+    HTTP_Listen         {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
     {% endif %}
-    HTTP_Port    {{ flb_metrics_bind_port }}
+    HTTP_Port           {{ flb_metrics_bind_port }}
     {% endif %}
-    
-#### END SERVICE CONFIG ####
+#### SERVICE CONFIG     => END METRICS CONFIG  ####
 
+#### END SERVICE CONFIG   ####
+
+
+
+{% if flb_inputs.files is defined and ( flb_inputs.files | length > 0 ) %}
 #### BEGIN FILE INPUTS ####
-
-{% if flb_inputs.files is defined %}{% for item in flb_inputs.files %}
+{% for item in flb_inputs.files %}
 [INPUT]
     Name                tail
     Path                {{ item.path }}
@@ -42,57 +48,65 @@
 {% if item.tag is defined %}
     Tag                 {{ item.tag }}
 {% endif %}
-{% endfor %}{% endif %}
+{% endfor %}
+#### END FILE INPUTS  ####
+{% endif %}
 
-#### END FILE INPUTS ####
 
-#### BEGIN SERVICE INPUTS ####
+
+
 
 {% if ansible_service_mgr == "systemd" %}
-{% if flb_inputs.services is defined %}{% for item in flb_inputs.services %}
+{% if flb_inputs.services is defined and ( flb_inputs.services | length > 0 ) %}
+#### BEGIN SERVICE INPUTS ####
+{% for item in flb_inputs.services %}
 [INPUT]
     Name                systemd
     Read_From_Tail      true
     Strip_Underscores   true
     Systemd_Filter      _SYSTEMD_UNIT={{ item }}.service
     Tag                 {{ ansible_hostname }}::*
-{% endfor %}{% endif %}
+{% endfor %}
+#### END SERVICE INPUTS   ####
+{% endif %}
 {% endif %}
 
-#### END SERVICE INPUTS ####
 
-#### BEGIN CUSTOM INPUTS ####
+
+
 
 {% if flb_inputs.custom is defined %}
+#### BEGIN CUSTOM INPUTS ####
 {% for input in flb_inputs.custom %}
 [INPUT]
 {% for key in input %}
-    {{ key }}           {{ input[key] }}
+    {{ "%-20s" | format(key,) }}{{ input[key] }}
 {% endfor %}
 {% endfor %}
+#### END CUSTOM INPUTS  ####
 {% endif %}
 
-#### END CUSTOM INPUTS ####
 
-#### BEGIN OUTPUTS ####
+
 
 {% if flb_outputs is defined %}
+#### BEGIN OUTPUTS ####
 {% for output in flb_outputs %}
 [OUTPUT]
 {% for key in output %}
     {{ "%-20s" | format(key,) }}{{ output[key] }}
 {% endfor %}
 {% endfor %}
+#### END OUTPUTS  ####
 {% endif %}
 
-#### END OUTPUTS ####
 
+
+{% if flb_includes is defined and ( flb_includes | length > 0 )%}
 #### BEGIN CUSTOM INCLUDES ####
-
-{% if flb_includes is defined %}
 {% for item in flb_includes %}
-@INCLUDE              {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}
+@INCLUDE                {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
+#### END CUSTOM INCLUDES  ####
 {% endif %}
 
-#### END CUSTOM INCLUDES ####

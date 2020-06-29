@@ -54,13 +54,35 @@
         - flb_custom_parsers is defined
         - flb_custom_parsers | length >0
       notify: Restart td-agent-bit
+- name: Check for logrotate Duplicates
+  become: true
+  shell: >-
+    echo "$(
+      for file in $( ls "{{ flb_logrotate_conf_dir | quote }}/*" | grep -v "{{ flb_logrotate_prefix }}"); do
+        cat $file | grep -v '^#' | tr "\\n" " " | sed 's;\\([^{]*\\){.*;\\1;' | sed 's;  [ ]*; ;gm' | tr " " "\\n";
+      done
+    )"
+  register: logrotate_watched_files
+- name: Warn about duplicate logrotates
+  when:
+    - flb_inputs.files is defined and flb_inputs.files|length > 0
+    - ( flb_rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
+    - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
+    - item.path in ( logrotate_watched_files.stdout_lines | list )
+  fail:
+    msg: >-
+      Role detected that file input for \"{{ item.path }}\" is already being rotated by
+      another logrotate script. Automatic logrotate will not be configured for this input!
+  with_items: '{{ flb_inputs.files }}'
+  ignore_errors: yes
 - name: Configure logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
     - ( flb_rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
     - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
+    - item.path not in ( logrotate_watched_files.stdout_lines | list )
   become: true
   template:
     src: logrotate.d.j2
-    dest: "{{ logrotate_conf_dir }}{{ item.path | basename }}"
+    dest: "{{ flb_logrotate_conf_dir }}/{{ flb_logrotate_prefix }}{{ item.path | basename }}"
   with_items: "{{ flb_inputs.files }}"
