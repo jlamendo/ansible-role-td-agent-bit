@@ -7,15 +7,6 @@
         path: "{{ flb_conf_dir }}"
         state: directory
         mode: 0644
-    - name: Template Out td-agent-bit.conf
-      become: true
-      template:
-        owner: root
-        group: root
-        mode: 0644
-        src: td-agent-bit.conf.j2
-        dest: "{{ flb_conf_dir }}/{{ flb_conf_file }}"
-      notify: Restart td-agent-bit
     - name: Create Custom Includes Dir
       become: true
       file:
@@ -54,20 +45,32 @@
         - flb_custom_parsers is defined
         - flb_custom_parsers | length >0
       notify: Restart td-agent-bit
+    - name: Template Out td-agent-bit.conf
+      become: true
+      template:
+        owner: root
+        group: root
+        mode: 0644
+        src: td-agent-bit.conf.j2
+        dest: "{{ flb_conf_dir }}/{{ flb_conf_file }}"
+      notify: Restart td-agent-bit
 - name: Check for logrotate Duplicates
   become: true
-  shell: >-
-    set -o pipefail;
-    for file in $( ls -d {{ flb_logrotate_conf_dir | quote }}* | grep -v "{{ flb_logrotate_prefix | quote }}");
-    do cat $file | grep -v '^#' | tr '\n' " " | sed 's;\([^{]*\){.*;\1;' | sed 's;  [ ]*; ;gm' |
-    tr " " "\n" | tr -d \" | grep "/"; done
+  shell:
+    cmd: >-
+      set -o pipefail;
+      for file in $( ls -d {{ flb_logrotate_conf_dir | quote }}* | grep -v "{{ flb_logrotate_prefix | quote }}");
+      do cat $file | grep -v '^#' | tr '\n' " " | sed 's;\([^{]*\){.*;\1;' | sed 's;  [ ]*; ;gm' |
+      tr " " "\n" | tr -d \" | grep "/"; done
+    executable: /bin/bash
   register: logrotate_watched_files
   changed_when: logrotate_watched_files.rc == 0
 - name: Warn about duplicate logrotates
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
-    - ( flb_rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
+    - ( tail_input.rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
     - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
+    - ( not ( item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates) ))
     - item.path in ( logrotate_watched_files.stdout_lines | list )
   fail:
     msg: >-
@@ -78,11 +81,11 @@
 - name: Configure logrotate
   when:
     - flb_inputs.files is defined and flb_inputs.files|length > 0
-    - ( flb_rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
+    - ( tail_input.rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
     - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
-    - item.path not in ( logrotate_watched_files.stdout_lines | list )
+    - (item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates)) or item.path not in ( logrotate_watched_files.stdout_lines | list )
   become: true
   template:
     src: logrotate.d.j2
-    dest: "{{ flb_logrotate_conf_dir }}/{{ flb_logrotate_prefix }}{{ item.path | basename }}"
+    dest: "{{ flb_logrotate_conf_dir }}/{{ flb_logrotate_prefix }}{{ (item.path | basename | splitext)[0] | replace('*', '_all_') }}"
   with_items: "{{ flb_inputs.files }}"

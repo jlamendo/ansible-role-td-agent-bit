@@ -27,13 +27,12 @@ tail_input:
   state_db: /var/log/.flb-buffer
   state_db_sync: Normal
   mem_max_sz: 56M
-###############################################################################
-## Automatic Logrotate Configuration
-###############################################################################
-flb_rotate_enabled: true
-flb_rotate_interval: "hourly"
-flb_rotate_missingok: true
-flb_rotate_retention: 0
-flb_rotate_maxsize: 5M
-flb_rotate_strategy: copytruncate
-###############################################################################
+  rotate_enabled: true
+  rotate_interval: hourly
+  rotate_missingok: true
+  rotate_retention: 0
+  rotate_maxsize: 5M
+  rotate_strategy: copytruncate
+  rotate_allow_duplicates: true
+# rotate_owner: www
+# rotate_group: www

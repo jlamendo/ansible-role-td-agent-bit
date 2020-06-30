@@ -14,24 +14,20 @@
 #### SERVICE CONFIG     => END CUSTOM PARSERS   ####
 {% endif %}
 
-
 #### SERVICE CONFIG     => BEGIN METRICS CONFIG ####
     HTTP_Server         {{ (flb_metrics_enable | bool) | ternary('On', 'Off') }}
-    {% if  (flb_metrics_enable | bool) %}
-    {% if ansible_default_ipv4["address"] | ipaddr('private') %}
+{% if  (flb_metrics_enable | bool) %}
+{% if ansible_default_ipv4["address"] | ipaddr('private') %}
     HTTP_Listen         {{ ansible_default_ipv4["address"] | ipaddr('private') }}
-    {% elif flb_metrics_bind_cidr is defined %}
+{% elif flb_metrics_bind_cidr is defined %}
     HTTP_Listen         {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
-    {% endif %}
+{% endif %}
     HTTP_Port           {{ flb_metrics_bind_port }}
-    {% endif %}
+{% endif %}
 #### SERVICE CONFIG     => END METRICS CONFIG  ####
-
 #### END SERVICE CONFIG   ####
-
-
-
 {% if flb_inputs.files is defined and ( flb_inputs.files | length > 0 ) %}
+
 #### BEGIN FILE INPUTS ####
 {% for item in flb_inputs.files %}
 [INPUT]
@@ -39,9 +35,12 @@
     Path                {{ item.path }}
     Buffer_Chunk_Size   {{ item.buffer_chunk_sz | default(tail_input.buffer_chunk_sz) }}
     Buffer_Max_Size     {{ item.buffer_max_sz | default(tail_input.buffer_max_sz) }}
-    DB                  {{ item.state_db | default( tail_input.state_db + '/' + ( item.path | basename ) + '.state' )}}
+    DB                  {{ item.state_db | default( tail_input.state_db + '/' + (( item.path | basename | splitext)[0] | replace('*', '_all_' ))  + '.state' )}}
     DB.Sync             {{ item.state_db_sync | default( tail_input.state_db_sync )}}
     Mem_Buf_Limit       {{ item.mem_max_sz | default( tail_input.mem_max_sz )}}
+{% if item.exclude_path is defined or tail_input.exclude_path is defined %}
+    Exclude_Path        {{ item.exclude_path | default(tail_input.exclude_path) }}
+{% endif %}
 {% if item.parser is defined %}
     Parser              {{ item.parser }}
 {% endif %}
@@ -51,13 +50,9 @@
 {% endfor %}
 #### END FILE INPUTS  ####
 {% endif %}
-
-
-
-
-
 {% if ansible_service_mgr == "systemd" %}
 {% if flb_inputs.services is defined and ( flb_inputs.services | length > 0 ) %}
+
 #### BEGIN SERVICE INPUTS ####
 {% for item in flb_inputs.services %}
 [INPUT]
@@ -70,12 +65,8 @@
 #### END SERVICE INPUTS   ####
 {% endif %}
 {% endif %}
-
-
-
-
-
 {% if flb_inputs.custom is defined %}
+
 #### BEGIN CUSTOM INPUTS ####
 {% for input in flb_inputs.custom %}
 [INPUT]
@@ -85,11 +76,8 @@
 {% endfor %}
 #### END CUSTOM INPUTS  ####
 {% endif %}
-
-
-
-
 {% if flb_outputs is defined %}
+
 #### BEGIN OUTPUTS ####
 {% for output in flb_outputs %}
 [OUTPUT]
@@ -99,10 +87,8 @@
 {% endfor %}
 #### END OUTPUTS  ####
 {% endif %}
-
-
-
 {% if flb_includes is defined and ( flb_includes | length > 0 )%}
+
 #### BEGIN CUSTOM INCLUDES ####
 {% for item in flb_includes %}
 @INCLUDE                {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}

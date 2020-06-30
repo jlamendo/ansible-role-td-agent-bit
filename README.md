@@ -166,12 +166,24 @@ This role automatically generates logrotate configs for each input defined via `
 - Description: The strategy used to rotate logs. td-agent-bit supports `create` and `copytruncate` modes.
 - Default: `tail_input.rotate_strategy: copytruncate`
 
-#### flb_rotate_scripts
+#### tail_input.rotate_owner
+- Description: The owner for the new log files that logrotate creates
+- Default: none
+
+#### tail_input.rotate_group
+- Description: The group for the new log files that logrotate creates
+- Default: none
+
+#### tail_input.rotate_allow_duplicates
+- Description: Whether or not a logrotate script should still be created when it is determined that another logrotate script, not managed by this role, is already monitoring the target file/path.
+- Default: `tail_input.rotate_allow_duplicates: true`
+
+#### tail_input.rotate_scripts
 - Description: Custom scripts for logrotate to run at defined phases of the log rotation lifecycle.
 - Default: none
 - Example: 
 >```
->  flb_rotate_scripts:
+>  tail_input.rotate_scripts:
 >    - name: postrotate
 >      script: "/usr/bin/systemctl restart apache"
 >```
@@ -184,9 +196,14 @@ The files key is a list of entries that will be templated into individual `[INPU
 
 
 #### flb_inputs.files[].path
-- Description: Path to an individual log file which td-agent-bit should tail and ingest.
+- Description: Path to an individual log file which td-agent-bit should tail and ingest. Supports `*` wildcards.
 - Default: none
 - Example: `flb_inputs.files[].path: "/var/log/syslog"`
+
+#### flb_inputs.files[].exclude_path
+- Description: Pattern for log files which match the `path` pattern, but should be excluded anyways. Supports `*` wildcards.
+- Default: none
+- Example: `flb_inputs.files[].exclude_path: "/var/log/app.log*"`
 
 #### flb_inputs.files[].parser
 - Description: Select a parser to parse the input file into individual keys before sending it to the output buffer. More information about available built-in parsers can be found [here](https://github.com/fluent/fluent-bit/blob/master/conf/parsers.conf).
