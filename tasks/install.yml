@@ -12,11 +12,9 @@
   with_items: '{{ flb_inputs.services }}'
   ignore_errors: yes
 - name: Install td-agent-bit from .deb
-  when:
-    - ansible_distribution in ["Ubuntu","Debian"]
-    - (ansible_distribution_major_version | int ) is divisibleby 2
-    - (ansible_distribution_version | float ) > 14.04
-    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+  when: >-
+    ( ( ansible_distribution | lower ) == "ubuntu" and  (ansible_distribution_major_version | int ) is divisibleby 2 and ( ansible_distribution_major_version | int ) > 14 )
+    or (( ansible_distribution | lower ) == "debian" and  ansible_distribution_release | lower in ["stretch", "jessie"] )
   block:
     - name: Add td-agent-bit apt-key
       become: true
@@ -42,6 +40,14 @@
       notify: Restart td-agent-bit
       tags: ['install']
       register: td_agent_installed
+    - name: Ensure td-agent-bit Service is enabled
+      become: true
+      service:
+        name: td-agent-bit
+        enabled: yes
+    - name: Gather Service Information
+      become: true
+      service_facts:
 - name: Install td-agent-bit from .rpm
   when:
     - ansible_os_family == "RedHat"
@@ -65,8 +71,16 @@
         state: present
         update_cache: true
       notify: Restart td-agent-bit
-      tags: ['install']
       register: td_agent_installed
+      tags: ['install']
+    - name: Ensure td-agent-bit Service is enabled
+      become: true
+      service:
+        name: td-agent-bit
+        enabled: yes
+    - name: Gather Service Information
+      become: true
+      service_facts:
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when:
     - td_agent_installed is not defined or td_agent_installed.skipped or td_agent_installed.failed
@@ -75,9 +89,10 @@
       - name: Install Build Dependencies
         when: ansible_os_family == "Debian"
         become: true
-        package:
+        apt:
+          update_cache: true
           state: present
-          name:
+          pkg:
           - build-essential
           - cmake3
           - bison
