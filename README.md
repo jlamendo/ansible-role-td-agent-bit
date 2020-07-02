@@ -291,7 +291,7 @@ The files key is a list of entries that will be templated into individual `[INPU
 >```
 
 #### flb_filters
-- Description: A list of dicts containing filters to be applied to data passing through td-agent-bit. No changes are made to the config, instead this is a 1:1 map from YAML to the td-agent-bit config. Keys are case-sensitive.
+- Description: A list of dicts containing filters to be applied to data passing through td-agent-bit. No changes are made to the config, instead this is a 1:1 map from YAML to the td-agent-bit config. Keys are case-sensitive. A key can be repeated with multiple values by setting the value to a list of desired values rather than a string.
 - Default: none
 - Example:
 > This example shows a block of td-agent-bit config, and an `flb_filters` value that would result in that config being created.
