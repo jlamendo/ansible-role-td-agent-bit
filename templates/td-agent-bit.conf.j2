@@ -9,7 +9,7 @@
 {% if flb_custom_parsers is defined and ( flb_custom_parsers | length > 0 ) %}
 #### SERVICE CONFIG     => BEGIN CUSTOM PARSERS ####
 {% for item in flb_custom_parsers %}
-    Parsers_File        {{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}
+    Parsers_File        {{ flb_parsers_dir }}/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
 #### SERVICE CONFIG     => END CUSTOM PARSERS   ####
 {% endif %}
@@ -65,7 +65,7 @@
 #### END SERVICE INPUTS   ####
 {% endif %}
 {% endif %}
-{% if flb_inputs.custom is defined %}
+{% if flb_inputs.custom is defined and ( flb_inputs.custom | length > 0 ) %}
 
 #### BEGIN CUSTOM INPUTS ####
 {% for input in flb_inputs.custom %}
@@ -76,7 +76,32 @@
 {% endfor %}
 #### END CUSTOM INPUTS  ####
 {% endif %}
-{% if flb_outputs is defined %}
+{% if flb_filters is defined and ( flb_filters | length > 0 ) %}
+
+#### BEGIN CUSTOM FILTERS ####
+{% for flb_filter in flb_filters %}
+[FILTER]
+{% for key in flb_filter %}
+    {{ "%-20s" | format(key,) }}{{ flb_filter[key] }}
+{% endfor %}
+{% endfor %}
+#### END CUSTOM FILTERS  ####
+{% endif %}
+{% if flb_lua_filters is defined and ( flb_lua_filters | length > 0 ) %}
+
+#### BEGIN CUSTOM LUA FILTERS ####
+{% for script in flb_lua_filters %}
+{% for lua_filter in flb_lua_filters[script] %}
+[FILTER]
+    Name                  lua
+    Match                 {{ (lookup('dict', lua_filter)).key }}
+    script                {{ flb_filters_dir }}/{{ ( script | basename ).split(".j2")[0] }}
+    call                  {{ (lookup('dict', lua_filter)).value }}
+{% endfor %}
+{% endfor %}
+#### END CUSTOM LUA FILTERS  ####
+{% endif %}
+{% if flb_outputs is defined and ( flb_outputs | length > 0 )%}
 
 #### BEGIN OUTPUTS ####
 {% for output in flb_outputs %}
@@ -91,7 +116,7 @@
 
 #### BEGIN CUSTOM INCLUDES ####
 {% for item in flb_includes %}
-@INCLUDE                {{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}
+@INCLUDE                {{ flb_includes_dir }}/{{ (item | basename).split(".j2")[0] }}
 {% endfor %}
 #### END CUSTOM INCLUDES  ####
 {% endif %}

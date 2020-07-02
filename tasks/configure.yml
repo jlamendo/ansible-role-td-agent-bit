@@ -10,13 +10,19 @@
     - name: Create Custom Includes Dir
       become: true
       file:
-        path: "{{ flb_conf_dir }}/includes"
+        path: "{{ flb_includes_dir }}"
         state: directory
         mode: 0644
     - name: Create Custom Parsers Dir
       become: true
       file:
-        path: "{{ flb_conf_dir }}/parsers.d"
+        path: "{{ flb_parsers_dir }}"
+        state: directory
+        mode: 0644
+    - name: Create Custom Filters Dir
+      become: true
+      file:
+        path: "{{ flb_filters_dir }}"
         state: directory
         mode: 0644
     - name: Ensure Buffer Dir Exists
@@ -28,7 +34,7 @@
     - name: Template out Custom td-agent-bit Includes
       template:
         src: '{{ item }}'
-        dest: '{{ flb_conf_dir }}/includes/{{ (item | basename).split(".j2")[0] }}'
+        dest: '{{ flb_includes_dir }}/{{ (item | basename).split(".j2")[0] }}'
         mode: 0644
       with_items: '{{ flb_includes }}'
       when:
@@ -38,12 +44,22 @@
     - name: Template out Custom td-agent-bit Parsers
       template:
         src: '{{ item }}'
-        dest: '{{ flb_conf_dir }}/parsers/{{ (item | basename).split(".j2")[0] }}'
+        dest: '{{ flb_parsers_dir }}/{{ (item | basename).split(".j2")[0] }}'
         mode: 0644
       with_items: '{{ flb_custom_parsers }}'
       when:
         - flb_custom_parsers is defined
         - flb_custom_parsers | length >0
+      notify: Restart td-agent-bit
+    - name: Template out Custom td-agent-bit lua filter sources
+      template:
+        src: '{{ item.key }}'
+        dest: '{{ flb_filters_dir }}/{{ (item.key | basename).split(".j2")[0] }}'
+        mode: 0644
+      with_dict: '{{ flb_lua_filters }}'
+      when:
+        - flb_lua_filters is defined
+        - flb_lua_filters | length >0
       notify: Restart td-agent-bit
     - name: Template Out td-agent-bit.conf
       become: true
@@ -67,11 +83,10 @@
   changed_when: logrotate_watched_files.rc == 0
 - name: Warn about duplicate logrotates
   when:
-    - flb_inputs.files is defined and flb_inputs.files|length > 0
-    - ( tail_input.rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
-    - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
-    - ( not ( item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates) ))
+    - flb_inputs.files is defined and flb_inputs.files | length > 0
+    - item.rotate_enabled | default(tail_input.rotate_enabled)
     - item.path in ( logrotate_watched_files.stdout_lines | list )
+    - ( not ( item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates )))
   fail:
     msg: >-
       Role detected that file input for \"{{ item.path }}\" is already being rotated by
@@ -80,10 +95,9 @@
   ignore_errors: yes
 - name: Configure logrotate
   when:
-    - flb_inputs.files is defined and flb_inputs.files|length > 0
-    - ( tail_input.rotate_enabled | default(false)) or ( item.rotate_enabled is defined and item.rotate_enabled is true )
-    - ( item.rotate_enabled is not defined or item.rotate_enabled is true )
-    - (item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates)) or item.path not in ( logrotate_watched_files.stdout_lines | list )
+    - flb_inputs.files is defined and flb_inputs.files | length > 0
+    - item.rotate_enabled | default(tail_input.rotate_enabled)
+    - ( item.rotate_allow_duplicates | default(tail_input.rotate_allow_duplicates) ) or item.path not in ( logrotate_watched_files.stdout_lines | list )
   become: true
   template:
     src: logrotate.d.j2

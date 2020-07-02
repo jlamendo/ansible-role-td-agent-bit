@@ -7,16 +7,19 @@ flb_svc_log_level: info
 flb_metrics_enable: false
 flb_metrics_bind_cidr: 172.16.0.0/12
 flb_metrics_bind_port: 9000
-flb_conf_dir: "/etc/td-agent-bit"
-flb_conf_file: "td-agent-bit.conf"
-flb_binary: "/usr/local/bin/td-agent-bit"
+flb_out_name: "td-agent-bit"
+flb_sys_conf_dir: "/etc"
+flb_conf_file: "{{ flb_out_name }}.conf"
+flb_conf_dir: "{{ flb_sys_conf_dir }}/{{ flb_out_name }}/"
+flb_build_install_prefix: "/usr/local"
+flb_binary: "{{ flb_build_install_prefix }}/bin/{{ flb_out_name }}"
 flb_build_vers: "1.4.6"
 flb_build_dir: "/usr/src/td-agent-bit"
+flb_build_force: false
 flb_upstart_script: "/etc/init/td-agent-bit.conf"
+flb_systemd_script: "/etc/systemd/system/td-agent-bit.service"
 flb_logrotate_conf_dir: "/etc/logrotate.d/"
 flb_logrotate_prefix: "td-agent-autorotate__"
-
-
 
 ###############################################################################
 ## Tail Input Default Configuration

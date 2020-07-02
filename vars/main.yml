@@ -1,0 +1,7 @@
+---
+## This file contains variables that are used for convenience in maintaining the role, and are not intended to be modified by user configurations.
+## These variables are undocumented, and modifying them may break things entirely, so do so at your own risk.
+
+flb_parsers_dir: "{{ flb_conf_dir }}/parsers.d"
+flb_filters_dir: "{{ flb_conf_dir }}/filters.d"
+flb_includes_dir: "{{ flb_conf_dir }}/includes"

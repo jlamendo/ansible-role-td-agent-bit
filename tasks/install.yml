@@ -12,9 +12,17 @@
   with_items: '{{ flb_inputs.services }}'
   ignore_errors: yes
 - name: Install td-agent-bit from .deb
-  when: >-
-    ( ( ansible_distribution | lower ) == "ubuntu" and  (ansible_distribution_major_version | int ) is divisibleby 2 and ( ansible_distribution_major_version | int ) > 14 )
-    or (( ansible_distribution | lower ) == "debian" and  ansible_distribution_release | lower in ["stretch", "jessie"] )
+  when: >- 
+      not flb_build_force | default(false) 
+      and (
+        ( ansible_distribution | lower ) == 'ubuntu' and 
+        ( ansible_distribution_major_version | int ) is divisibleby 2 and 
+        ( ansible_distribution_major_version | int ) > 14 
+      )
+      or (
+        ( ansible_distribution | lower ) == 'debian' and 
+        ( ansible_distribution_release | lower ) in ['stretch', 'jessie'] 
+      )
   block:
     - name: Add td-agent-bit apt-key
       become: true
@@ -52,8 +60,7 @@
   when:
     - ansible_os_family == "RedHat"
     - ansible_distribution_major_version == "7"
-    - td_agent_installed is not defined
-    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+    - not flb_build_force | default(false)
   block:
     - name: Add td-agent-bit YUM Repository
       become: true
@@ -69,7 +76,6 @@
       package:
         name: td-agent-bit
         state: present
-        update_cache: true
       notify: Restart td-agent-bit
       register: td_agent_installed
       tags: ['install']
@@ -82,9 +88,16 @@
       become: true
       service_facts:
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
-  when:
-    - td_agent_installed is not defined or td_agent_installed.skipped or td_agent_installed.failed
-    - "'td-agent-bit' not in ansible_facts.services and 'td-agent-bit.service' not in ansible_facts.services"
+  when: >-
+    flb_build_force | default(false) or 
+    ((
+      td_agent_installed is not defined or 
+      td_agent_installed.skipped or 
+      td_agent_installed.failed ) and 
+    ( 
+      'td-agent-bit' not in ansible_facts.services and 
+      'td-agent-bit.service' not in ansible_facts.services 
+    ))
   block:
       - name: Install Build Dependencies
         when: ansible_os_family == "Debian"
@@ -94,7 +107,7 @@
           state: present
           pkg:
           - build-essential
-          - cmake3
+          - "{{ (( ansible_distribution | lower ) == 'ubuntu' and ( ansible_distribution_major_version | int) >= 16) | ternary('cmake','cmake3') }}"
           - bison
           - libbison-dev
           - flex
@@ -106,6 +119,11 @@
           - doxygen
           - libgtest-dev
           - libevent-dev
+      - name: Uninstall td-agent-bit System Package, if installed
+        become: true
+        package:
+          name: td-agent-bit
+          state: absent
       - name: Install Build Dependencies
         when: ansible_os_family == "RedHat"
         become: true
@@ -141,6 +159,9 @@
             - "-DFLB_WITHOUT_EXAMPLES=ON"
             - "-DFLB_TD=ON"
             - "-DFLB_IN_SYSTEMD={{ ansible_service_mgr | lower == 'systemd' | ternary('ON','OFF') }}"
+            - "-DCMAKE_INSTALL_SYSCONFDIR={{ flb_sys_conf_dir }}"
+            - "-DCMAKE_INSTALL_FULL_BINDIR={{ flb_build_install_prefix }}/bin"
+            - "-DCMAKE_INSTALL_PREFIX={{ flb_build_install_prefix }}"
       - name: Compile td-agent-bit
         make:
           chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
