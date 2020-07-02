@@ -12,16 +12,16 @@
   with_items: '{{ flb_inputs.services }}'
   ignore_errors: yes
 - name: Install td-agent-bit from .deb
-  when: >- 
-      not flb_build_force | default(false) 
+  when: >-
+      not flb_build_force | default(false)
       and (
-        ( ansible_distribution | lower ) == 'ubuntu' and 
-        ( ansible_distribution_major_version | int ) is divisibleby 2 and 
-        ( ansible_distribution_major_version | int ) > 14 
+        ( ansible_distribution | lower ) == 'ubuntu' and
+        ( ansible_distribution_major_version | int ) is divisibleby 2 and
+        ( ansible_distribution_major_version | int ) > 14
       )
       or (
-        ( ansible_distribution | lower ) == 'debian' and 
-        ( ansible_distribution_release | lower ) in ['stretch', 'jessie'] 
+        ( ansible_distribution | lower ) == 'debian' and
+        ( ansible_distribution_release | lower ) in ['stretch', 'jessie']
       )
   block:
     - name: Add td-agent-bit apt-key
@@ -89,14 +89,14 @@
       service_facts:
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when: >-
-    flb_build_force | default(false) or 
+    flb_build_force | default(false) or
     ((
-      td_agent_installed is not defined or 
-      td_agent_installed.skipped or 
-      td_agent_installed.failed ) and 
-    ( 
-      'td-agent-bit' not in ansible_facts.services and 
-      'td-agent-bit.service' not in ansible_facts.services 
+      td_agent_installed is not defined or
+      td_agent_installed.skipped or
+      td_agent_installed.failed ) and
+    (
+      'td-agent-bit' not in ansible_facts.services and
+      'td-agent-bit.service' not in ansible_facts.services
     ))
   block:
       - name: Install Build Dependencies
