@@ -82,7 +82,7 @@
 {% for flb_filter in flb_filters %}
 [FILTER]
 {% for key in flb_filter %}
-{% if flb_filter[key] is not string %}
+{% if flb_filter[key] is not string and flb_filter[key] is not number %}
 {% for repeating_key_item in flb_filter[key] %}
     {{ "%-20s" | format(key,) }}{{ repeating_key_item }}
 {% endfor %}
