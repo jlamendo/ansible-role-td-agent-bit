@@ -56,6 +56,9 @@
     - name: Gather Service Information
       become: true
       service_facts:
+  rescue:
+    - set_fact:
+        flb_build_force: true
 - name: Install td-agent-bit from .rpm
   when:
     - ansible_os_family == "RedHat"
@@ -87,6 +90,9 @@
     - name: Gather Service Information
       become: true
       service_facts:
+  rescue:
+    - set_fact:
+        flb_build_force: true
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when: >-
     flb_build_force | default(false) or

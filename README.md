@@ -233,7 +233,7 @@ The files key is a list of entries that will be templated into individual `[INPU
 - Example: `flb_inputs.files[].tag: syslog::{{ ansible_hostname }}`
 
 #### flb_inputs.services
-- Description: A very simple input format that accepts a list of strings that represent the names of services running on the target host. td-agent-bit will then tail the journald entries for these services. No logrotate configuration is generated, because journald handles this and none is needed. 
+- Description: A very simple input format that accepts a list of strings that represent the names of services running on the target host. td-agent-bit will then tail the journald entries for these services. No logrotate configuration is generated, because journald handles this and none is needed. Tags will automatically be added in the format `service.{{ systemd service name }}`.
 - Footguns: This input is exclusive to targets that use SystemD as their init system. If the target system is using an alternative init, the role will detect this. If SystemD is not detected, it will refuse to install/compile the related td-agent-bit extensions, skip injecting the service configuration into the td-agent-bit config, and emit a warning when the role is run, but everything else will continue to function as expected.  
 - Default: none
 - Example: 
@@ -291,7 +291,7 @@ The files key is a list of entries that will be templated into individual `[INPU
 >```
 
 #### flb_filters
-- Description: A list of dicts containing filters to be applied to data passing through td-agent-bit. No changes are made to the config, instead this is a 1:1 map from YAML to the td-agent-bit config. Keys are case-sensitive. A key can be repeated with multiple values by setting the value to a list of desired values rather than a string.
+- Description: A list of dicts containing filters to be applied to data passing through td-agent-bit. There is one special key, `filter_priority` that is used to set the order that the filters are templated out in, where 1 will be first. Filters without a priority set will be treated as priority 100, where no intentional changes are made to the order for filters of equal priority, but no guarantees of ordering are made other. Other than this special key, no changes are made to the config and this is a 1:1 map from YAML to the td-agent-bit config. Keys are case-sensitive. A key can be repeated with multiple values by setting the value to a list of desired values rather than a string.
 - Default: none
 - Example:
 > This example shows a block of td-agent-bit config, and an `flb_filters` value that would result in that config being created.

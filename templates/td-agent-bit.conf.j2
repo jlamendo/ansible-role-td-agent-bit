@@ -60,7 +60,7 @@
     Read_From_Tail      true
     Strip_Underscores   true
     Systemd_Filter      _SYSTEMD_UNIT={{ item }}.service
-    Tag                 {{ ansible_hostname }}::*
+    Tag                 service.*
 {% endfor %}
 #### END SERVICE INPUTS   ####
 {% endif %}
@@ -77,12 +77,12 @@
 #### END CUSTOM INPUTS  ####
 {% endif %}
 {% if flb_filters is defined and ( flb_filters | length > 0 ) %}
-
 #### BEGIN CUSTOM FILTERS ####
 {% for flb_filter in flb_filters %}
 [FILTER]
 {% for key in flb_filter %}
-{% if flb_filter[key] is not string and flb_filter[key] is not number %}
+{% if key == "filter_priority" %}
+{% elif flb_filter[key] is not string and flb_filter[key] is not number %}
 {% for repeating_key_item in flb_filter[key] %}
     {{ "%-20s" | format(key,) }}{{ repeating_key_item }}
 {% endfor %}
