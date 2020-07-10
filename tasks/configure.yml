@@ -66,15 +66,15 @@
       set_fact:
         flb_filters_yaml: "{{ [] | to_yaml }}"
 
-    - name: Prioritize Filters
+    - name: Insert Default Priority into Filters
       set_fact:
-        flb_filters_yaml: "{% if item.filter_priority | default(false) %}{{((flb_filters_yaml | from_yaml) + [item] )| to_yaml}}{% else %}{{(( flb_filters_yaml | from_yaml ) + [( item | combine( {'filter_priority': 100 } ) )] )|to_yaml}}{% endif %}"
+        flb_filters_yaml: >-
+          {%- if item.filter_priority | default(false) -%}
+            {{ (( flb_filters_yaml | from_yaml ) + [item] ) | to_yaml }}
+          {%- else -%}
+            {{ (( flb_filters_yaml | from_yaml ) + [ item | combine( {'filter_priority': 100 }) ] ) | to_yaml }}
+          {%- endif -%}
       with_items: "{{ flb_filters }}"
-      when: flb_filters is defined
- 
-    - name: Sort Filters
-      set_fact:
-        flb_filters: "{{flb_filters_yaml | from_yaml | sort(attribute='filter_priority')}}"
       when: flb_filters is defined
 
     - name: Template Out td-agent-bit.conf

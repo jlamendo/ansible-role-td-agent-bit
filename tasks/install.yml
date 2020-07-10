@@ -57,7 +57,8 @@
       become: true
       service_facts:
   rescue:
-    - set_fact:
+    - name: Binary installation failed, fall back to building from source
+      set_fact:
         flb_build_force: true
 - name: Install td-agent-bit from .rpm
   when:
@@ -91,7 +92,8 @@
       become: true
       service_facts:
   rescue:
-    - set_fact:
+    - name: Binary installation failed, fall back to building from source
+      set_fact:
         flb_build_force: true
 - name: Compile td-agent-bit From Sources [ FALLBACK ]
   when: >-

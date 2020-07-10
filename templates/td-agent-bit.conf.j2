@@ -76,9 +76,9 @@
 {% endfor %}
 #### END CUSTOM INPUTS  ####
 {% endif %}
-{% if flb_filters is defined and ( flb_filters | length > 0 ) %}
+{% if flb_filters_yaml is defined and (( flb_filters_yaml | from_yaml ) | length > 0 ) %}
 #### BEGIN CUSTOM FILTERS ####
-{% for flb_filter in flb_filters %}
+{% for flb_filter in ( flb_filters_yaml | from_yaml | sort(attribute='filter_priority') )  %}
 [FILTER]
 {% for key in flb_filter %}
 {% if key == "filter_priority" %}
