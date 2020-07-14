@@ -38,6 +38,7 @@
     DB                  {{ item.state_db | default( tail_input.state_db + '/' + (( item.path | basename | splitext)[0] | replace('*', '_all_' ))  + '.state' )}}
     DB.Sync             {{ item.state_db_sync | default( tail_input.state_db_sync )}}
     Mem_Buf_Limit       {{ item.mem_max_sz | default( tail_input.mem_max_sz )}}
+    Skip_Long_Lines     {{ item.skip_long_lines | default( tail_input.skip_long_lines ) }}
 {% if item.exclude_path is defined or tail_input.exclude_path is defined %}
     Exclude_Path        {{ item.exclude_path | default(tail_input.exclude_path) }}
 {% endif %}
