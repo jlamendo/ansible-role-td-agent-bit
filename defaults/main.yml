@@ -37,5 +37,6 @@ tail_input:
   rotate_maxsize: 5M
   rotate_strategy: copytruncate
   rotate_allow_duplicates: true
+  skip_long_lines: On
 # rotate_owner: www
 # rotate_group: www
