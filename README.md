@@ -142,6 +142,10 @@ _Note: All of the tail plugin defaults can also be set on a per-input basis, usi
 - Description: This sets the default for the maximum amount of data the tail plugin will buffer before forcing a flush. This limit is permissive, and may be exceeded by the value of `tail_input.buffer_chunk_sz - 1`.
 - Default: `tail_input.buffer_max_sz: 5M`
 
+#### tail_input.skip_long_lines
+- Description: When td-agent-bit encounters a log line that is larger than buffer_chunk_sz, it is not possible for it to ingest this line. Ordinarily, td-agent-bit will indefinitely halt processing on that file when this occurs. This setting directs td-agent-bit to instead skip the problematic line and carry on. This may result in data loss, so in certain situations where that is absolutely unacceptable setting this to Off and having rigorous monitoring to know when td-agent-bit has halted may be preferable.
+- Default: `tail_input.skip_long_lines: On`
+
 #### tail_input.state_db
 - Description: This sets the default path for the internal state databases that the tail plugin will create. One database will be created for each monitored file. The database helps td-agent-bit retain state in the event of a system failure, and also helps the agent track with logrotate more effectively.
 - Default: `tail_input.state_db: /var/log/.flb-buffer`
