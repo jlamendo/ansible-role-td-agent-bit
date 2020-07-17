@@ -10,7 +10,7 @@ flb_metrics_bind_port: 9000
 flb_out_name: "td-agent-bit"
 flb_sys_conf_dir: "/etc"
 flb_conf_file: "{{ flb_out_name }}.conf"
-flb_conf_dir: "{{ flb_sys_conf_dir }}/{{ flb_out_name }}/"
+flb_conf_dir: "{{ flb_sys_conf_dir }}/{{ flb_out_name }}"
 flb_build_install_prefix: "/usr/local"
 flb_binary: "{{ flb_build_install_prefix }}/bin/{{ flb_out_name }}"
 flb_build_vers: "1.4.6"
