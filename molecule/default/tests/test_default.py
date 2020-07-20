@@ -33,12 +33,17 @@ def test_flb_conf_file(host):
   with host.sudo():
     conf = host.file("/etc/td-agent-bit/td-agent-bit.conf")
     assert conf.exists
-    assert conf.contains("/var/log/td_agent_bit.catchall")
     assert conf.contains("syslog-rfc3164-local")
     assert conf.contains("THROTTLED.$TAG false")
+    assert conf.contains("/var/log/molecule-test-output.log")
 
 def test_flb_service(host):
   with host.sudo():
     flb_svc = host.service("td-agent-bit")
     assert flb_svc.is_enabled
     assert flb_svc.is_running
+
+def test_flb_output_file(host):
+  with host.sudo():
+    conf = host.file("/var/log/molecule-test-output.log")
+    assert conf.exists

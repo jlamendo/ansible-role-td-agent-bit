@@ -1,0 +1,10 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Create Test Log File
+      become: true
+      shell: "touch /var/log/molecule-test-output.log && chmod 777 /var/log/molecule-test-output.log"
+      args:
+        creates: /var/log/molecule-test-output.log

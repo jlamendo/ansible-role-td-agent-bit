@@ -21,6 +21,6 @@ provisioner:
   connection_options:
     ansible_ssh_user: vagrant
   lint:
-    enabled: false
+    name: ansible-lint
 verifier:
   name: testinfra

@@ -3,25 +3,50 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Gather Service Information
-      become: true
-      service_facts:
-    # - name: Create Catchall Test Dir
-    #   become: true
-    #   file:
-    #     path: "/var/log/td_agent_bit.catchall/"
-    #     state: directory
-    #     mode: 0777
-    - name: Create Catchall Test Log File
-      become: true
-      file:
-        path: "/var/log/td_agent_bit.catchall/app-1.log"
-        state: touch
-        mode: 0777
-      ignore_errors: true
-    - name: Include Test Fixtures
-      include_vars:
-        file: "fixtures/source_config.yml"
     - name: "Include jlamendo.td_agent_bit"
       include_role:
         name: "jlamendo.td_agent_bit"
+      vars:
+        ansible_user: "vagrant"
+        ansible_ssh_user: "vagrant"
+        flb_metrics_enable: true
+        flb_inputs:
+          files:
+            - parser: syslog-rfc3164-local
+              path: "/var/log/syslog"
+              rotate_enabled: false
+              tag: syslog
+          services:
+            - sshd
+            - sudo
+          custom:
+            - Name: cpu
+              Tag: cpu_metrics
+        flb_outputs:
+          - Name: file
+            Match: '*'
+            Path: "/var/log/molecule-test-output.log"
+        flb_filters:
+          - Name: rewrite_tag
+            Match: test
+            Rule: "$event.msg ^(NOISY_MESSAGE)$ THROTTLED.$TAG false"
+            filter_priority: 90
+          - Name: nest
+            Match: "*"
+            Nest_under: event
+            Operation: nest
+            Wildcard: "*"
+            filter_priority: 20
+          - Name: modify
+            Match: "*"
+            Add:
+            - index catchall
+            - sourcetype molecule:jlamendo.td_agent_bit
+            - host td_agent_bit.test
+            filter_priority: 21
+          - Name: throttle
+            Match: THROTTLED.*
+            Interval: 12s
+            Rate: 60
+            Window: 5
+            filter_priority: 5

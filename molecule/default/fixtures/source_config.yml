@@ -5,7 +5,7 @@ flb_inputs:
   files:
     - exclude_path: "*.log1"
       parser: json
-      path: "/var/log/td_agent_bit.catchall/app-*.log"
+      path: "/var/log/td_agent_bit-*.log"
       tag: catchall
     - parser: syslog-rfc3164-local
       path: "/var/log/syslog"
