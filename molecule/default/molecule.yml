@@ -1,0 +1,26 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider: 
+    name: virtualbox
+platforms:
+  - name: Trusty
+    box: ubuntu/trusty64
+  - name: Xenial
+    box: ubuntu/xenial64
+  - name: Bionic
+    box: ubuntu/bionic64
+  - name: CentOS7
+    box: centos/7
+  - name: Debian9
+    box: debian/stretch64
+provisioner:
+  name: ansible
+  connection_options:
+    ansible_ssh_user: vagrant
+  lint:
+    enabled: false
+verifier:
+  name: testinfra

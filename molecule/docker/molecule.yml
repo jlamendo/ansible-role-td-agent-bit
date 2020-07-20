@@ -1,0 +1,31 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: UbuntuTrusty
+    box: ubuntu/trusty64
+    instance_raw_config_args:
+      - "vm.network 'forwarded_port', guest: 80, host: 8088"
+platforms:
+  - name: CentOS7
+    image: centos:7
+    command: /sbin/init
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  - name: Xenial
+    image: ubuntu:xenial
+  - name: Trusty
+    image: ubuntu:trusty
+provisioner:
+  name: ansible
+  connection_options:
+    ansible_ssh_user: vagrant
+  lint:
+    enabled: false
+verifier:
+  name: testinfra

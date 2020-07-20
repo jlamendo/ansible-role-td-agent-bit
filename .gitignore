@@ -1,0 +1,5 @@
+molecule/default/tests/__pycache__/
+.envrc
+bin/
+lib/
+pyvenv.cfg

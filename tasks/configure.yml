@@ -96,7 +96,7 @@
       tr " " "\n" | tr -d \" | grep "/"; done
     executable: /bin/bash
   register: logrotate_watched_files
-  changed_when: logrotate_watched_files.rc == 0
+  changed_when: logrotate_watched_files.rc != 0
 - name: Warn about duplicate logrotates
   when:
     - flb_inputs.files is defined and flb_inputs.files | length > 0

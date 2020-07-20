@@ -1,0 +1,81 @@
+ansible_user: "vagrant"
+ansible_ssh_user: "vagrant"
+flb_metrics_enable: true
+flb_inputs:
+  files:
+    - exclude_path: "*.log1"
+      parser: json
+      path: "/var/log/td_agent_bit.catchall/app-*.log"
+      tag: catchall
+    - parser: syslog-rfc3164-local
+      path: "/var/log/syslog"
+      rotate_enabled: false
+      tag: syslog
+  services:
+    - sshd
+    - sudo
+  custom:
+    - Name: cpu
+      Tag: cpu_metrics
+
+  #   - Name: systemd
+  #     Read_From_Tail: true
+  #     Strip_Underscores: true
+  #     Systemd_Filter: _SYSTEMD_UNIT=sshd.service
+  #     Tag: "{{ ansible_hostname }}::*"
+
+flb_outputs:
+  - Name: file
+    Match: '*'
+    Path: "/tmp/td-agent-bit-test.log"
+  # - Host: splunk-molecule-non-existent.notldbythisname
+  #   Match: "*"
+  #   Name: splunk
+  #   Port: '443'
+  #   Splunk_Send_Raw: true
+  #   Splunk_Token: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  #   TLS: 'On'
+  #   TLS.Verify: 'On'
+
+# flb_lua_filters:
+#   "fixtures/custom_filter.lua.j2":
+#    - inject_host: '*'
+#    - inject_index: 'syslog.*'
+
+flb_filters:
+  - Name: rewrite_tag
+    Match: test
+    Rule: "$event.msg ^(NOISY_MESSAGE)$ THROTTLED.$TAG false"
+    filter_priority: 90
+
+  - Name: nest
+    Match: "*"
+    Nest_under: event
+    Operation: nest
+    Wildcard: "*"
+    filter_priority: 20
+
+  - Name: modify
+    Match: "*"
+    Add:
+    - index catchall
+    - sourcetype molecule:jlamendo.td_agent_bit
+    - host td_agent_bit.test
+    filter_priority: 21
+
+  - Name: throttle
+    Match: THROTTLED.*
+    Interval: 12s
+    Rate: 60
+    Window: 5
+    filter_priority: 5
+
+# tail_input.rotate_scripts:
+#   - name: postrotate
+#     script: "/usr/bin/systemctl restart apache"
+
+# flb_includes:
+#   - "fixtures/custom_include.conf.j2"
+
+# flb_custom_parsers:
+#   - "fixtures/json_parsers.conf.j2"
