@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Gather Service Information
+      become: true
+      service_facts:
+    # - name: Create Catchall Test Dir
+    #   become: true
+    #   file:
+    #     path: "/var/log/td_agent_bit.catchall/"
+    #     state: directory
+    #     mode: 0777
+    - name: Create Catchall Test Log File
+      become: true
+      file:
+        path: "/var/log/td_agent_bit.catchall/app-1.log"
+        state: touch
+        mode: 0777
+      ignore_errors: true
+    - name: Include Test Fixtures
+      include_vars:
+        file: "fixtures/source_config.yml"
+    - name: "Include jlamendo.td_agent_bit"
+      include_role:
+        name: "jlamendo.td_agent_bit"

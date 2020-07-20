@@ -1,7 +1,4 @@
 ---
-- name: Gather Service Information
-  become: true
-  service_facts:
 - name: Service Monitoring Sanity Test
   when:
     - ansible_service_mgr != "systemd"
@@ -11,7 +8,7 @@
     msg: 'SystemD Service "{{ item }}" is marked for monitoring, but target system init is "{{ ansible_service_mgr }}"! Service will not be monitored.'
   with_items: '{{ flb_inputs.services }}'
   ignore_errors: yes
-- name: Install td-agent-bit from .deb
+- name: Set install_from_deb flag
   when: >-
       not flb_build_force | default(false)
       and (
@@ -23,7 +20,38 @@
         ( ansible_distribution | lower ) == 'debian' and
         ( ansible_distribution_release | lower ) in ['stretch', 'jessie']
       )
+  set_fact:
+    install_from_deb: true
+
+- name: Set install_from_rpm flag
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution_major_version == "7"
+    - not ( install_from_deb | default(false) )
+    - not flb_build_force | default(false)
+  set_fact:
+    install_from_rpm: true
+
+
+- name: Set install_from_cmake flag
+  when:
+    - not ( install_from_deb  | default(false) )
+    - not ( install_from_rpm  | default(false) )
+  set_fact:
+    install_from_cmake: true
+
+- name: Install from .deb
+  when:
+    - install_from_deb | default(false)
   block:
+    - name: Install apt-transport-https Package
+      when:
+        - ( ansible_distribution | lower ) == 'debian'
+      become: true
+      package:
+        name: apt-transport-https
+        state: present
+      ignore_errors: true
     - name: Add td-agent-bit apt-key
       become: true
       apt_key:
@@ -34,8 +62,7 @@
       apt_repository:
         repo: >-
           deb https://packages.fluentbit.io/{{ ansible_distribution | lower }}/{{ ansible_distribution_release | lower }}
-          {{ ansible_distribution_release | lower }}
-          main
+          {{ ansible_distribution_release | lower }} main
         state: present
         filename: td-agent-bit
         update_cache: true
@@ -45,26 +72,21 @@
         name: td-agent-bit
         state: present
         update_cache: true
-      notify: Restart td-agent-bit
-      tags: ['install']
       register: td_agent_installed
     - name: Ensure td-agent-bit Service is enabled
       become: true
       service:
         name: td-agent-bit
         enabled: yes
-    - name: Gather Service Information
-      become: true
-      service_facts:
+      notify: Restart td-agent-bit
   rescue:
-    - name: Binary installation failed, fall back to building from source
+    - name: Install from .deb Failed, fall back to building from source
       set_fact:
-        flb_build_force: true
+        install_from_cmake: true
+
 - name: Install td-agent-bit from .rpm
   when:
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "7"
-    - not flb_build_force | default(false)
+    - install_from_rpm | default(false)
   block:
     - name: Add td-agent-bit YUM Repository
       become: true
@@ -80,151 +102,195 @@
       package:
         name: td-agent-bit
         state: present
-      notify: Restart td-agent-bit
       register: td_agent_installed
-      tags: ['install']
     - name: Ensure td-agent-bit Service is enabled
       become: true
       service:
         name: td-agent-bit
         enabled: yes
-    - name: Gather Service Information
-      become: true
-      service_facts:
+      notify: Restart td-agent-bit
   rescue:
-    - name: Binary installation failed, fall back to building from source
+    - name: Install from RPM failed, falling back to building from source
       set_fact:
-        flb_build_force: true
-- name: Compile td-agent-bit From Sources [ FALLBACK ]
-  when: >-
-    flb_build_force | default(false) or
-    ((
-      td_agent_installed is not defined or
-      td_agent_installed.skipped or
-      td_agent_installed.failed ) and
-    (
-      'td-agent-bit' not in ansible_facts.services and
-      'td-agent-bit.service' not in ansible_facts.services
-    ))
+        install_from_cmake: true
+
+- name: Compile td-agent-bit From Source
+  when:
+    - install_from_cmake | default(false)
   block:
-      - name: Install Build Dependencies
-        when: ansible_os_family == "Debian"
-        become: true
-        apt:
-          update_cache: true
-          state: present
-          pkg:
-          - build-essential
-          - "{{ (( ansible_distribution | lower ) == 'ubuntu' and ( ansible_distribution_major_version | int) >= 16) | ternary('cmake','cmake3') }}"
-          - bison
-          - libbison-dev
-          - flex
-          - libfl-dev
-          - pkg-config
-          - zlibc
-          - zlib1g-dev
-          - libpq-dev
-          - doxygen
-          - libgtest-dev
-          - libevent-dev
-      - name: Uninstall td-agent-bit System Package, if installed
-        become: true
-        package:
-          name: td-agent-bit
-          state: absent
-      - name: Install Build Dependencies
-        when: ansible_os_family == "RedHat"
-        become: true
-        yum:
-          name:
-            - "@Development tools"
-            - cmake
-          state: present
-      - name: Create Build Directory
-        become: true
-        file:
-          path: "{{ flb_build_dir }}"
-          state: directory
-          owner: "{{ ansible_user }}"
-          group: "{{ ansible_user }}"
-          mode: 0775
-      - name: Download td-agent-bit Sources
-        become: true
-        unarchive:
-          src: https://fluentbit.io/releases/{{ flb_build_vers.split(".")[0] }}.{{ flb_build_vers.split(".")[1] }}/fluent-bit-{{ flb_build_vers }}.tar.gz
-          dest: "{{ flb_build_dir }}"
-          remote_src: yes
-          owner: "{{ ansible_user }}"
-      - name: Configure td-agent-bit
-        command:
-          chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
-          argv:
-            - /usr/bin/cmake
-            - "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
-            - "-DFLB_JEMALLOC=ON"
-            - "-DFLB_TLS=ON"
-            - "-DFLB_BUFFERING=ON"
-            - "-DFLB_WITHOUT_EXAMPLES=ON"
-            - "-DFLB_TD=ON"
-            - "-DFLB_IN_SYSTEMD={{ ansible_service_mgr | lower == 'systemd' | ternary('ON','OFF') }}"
-            - "-DCMAKE_INSTALL_SYSCONFDIR={{ flb_sys_conf_dir }}"
-            - "-DCMAKE_INSTALL_FULL_BINDIR={{ flb_build_install_prefix }}/bin"
-            - "-DCMAKE_INSTALL_PREFIX={{ flb_build_install_prefix }}"
-      - name: Compile td-agent-bit
-        make:
-          chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
-          target: all
-          params:
-            NUM_THREADS: 2
-      - name: Install td-agent-bit
-        become: true
-        make:
-          chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
-          target: install
-      - name: Gather Service Information
-        become: true
-        service_facts:
-      - name: Stat td-agent-bin Upstart Service File
-        become: true
-        stat:
-          path: "{{ flb_upstart_script }}"
-        register: flb_upstart_script_stat
-        when: ansible_service_mgr | lower == 'upstart'
-      - name: Manually Install Upstart Script
-        when:
-          - flb_upstart_script_stat.stat is not defined or not flb_upstart_script_stat.stat.exists
-        block:
-          - name: Find td-agent-bit binary location
-            shell: "which td-agent-bit | tr -d '[:space:]'"
-            register: flb_binary_location
-          - name: Set flb_binary Fact
-            set_fact:
-              flb_binary: "{{ flb_binary_location.stdout }}"
-          - name: Template out td-agent-bit upstart file if needed
-            become: true
-            template:
-              src: 'init/td-agent-bit.conf.j2'
-              dest: '/etc/init/td-agent-bit.conf'
-              mode: 0644
-              owner: root
-            notify: Restart td-agent-bit
-          - name: Reload initctl Configuration
-            become: true
-            command: "initctl reload-configuration"
-      - name: Gather Service Information
-        become: true
-        service_facts:
+    - name: Install Build Dependencies
+      when:
+        - ansible_os_family == "Debian"
+      become: true
+      apt:
+        update_cache: true
+        state: present
+        pkg: >-
+          {{ (flb_build_dependencies[ansible_distribution | lower][ansible_distribution_release | lower]) | default([]) +
+          (flb_build_dependencies[ansible_distribution | lower]['all'] | default([])) }}
+    - name: Uninstall td-agent-bit System Package, if installed
+      become: true
+      package:
+        name: td-agent-bit
+        state: absent
+    - name: Install Build Dependencies
+      when:
+        - ansible_os_family == "RedHat"
+      become: true
+      yum:
+        name:
+          - "@Development tools"
+          - cmake
+        state: present
+    - name: Create Build Directory
+      become: true
+      file:
+        path: "{{ flb_build_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0775
+    - name: Download td-agent-bit Sources
+      become: true
+      unarchive:
+        src: https://fluentbit.io/releases/{{ flb_build_vers.split(".")[0] }}.{{ flb_build_vers.split(".")[1] }}/fluent-bit-{{ flb_build_vers }}.tar.gz
+        dest: "{{ flb_build_dir }}"
+        remote_src: yes
+        creates: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
+        owner: "{{ ansible_user }}"
+    - name: Configure td-agent-bit
+      command:
+        chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
+        argv:
+          - /usr/bin/cmake
+          - "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
+          - "-DFLB_JEMALLOC=ON"
+          - "-DFLB_TLS=ON"
+          - "-DFLB_BUFFERING=ON"
+          - "-DFLB_WITHOUT_EXAMPLES=ON"
+          - "-DFLB_TD=ON"
+          - "-DFLB_IN_SYSTEMD={{ ansible_service_mgr | lower == 'systemd' | ternary('ON','OFF') }}"
+          - "-DCMAKE_INSTALL_SYSCONFDIR={{ flb_sys_conf_dir }}"
+          - "-DCMAKE_INSTALL_FULL_BINDIR={{ flb_build_install_prefix }}/bin"
+          - "-DCMAKE_INSTALL_PREFIX={{ flb_build_install_prefix }}"
+        creates: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}/Makefile"
+    - name: Compile td-agent-bit
+      command:
+        chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
+        argv:
+          - "/usr/bin/make"
+          - "all"
+          - "-j"
+          - "2"
+        creates: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}/bin/td-agent-bit"
+      register: td_agent_bit_new_compile
+    - name: Install td-agent-bit
+      when:
+        - td_agent_bit_new_compile is defined
+        - td_agent_bit_new_compile.changed
+      become: true
+      make:
+        chdir: "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}"
+        target: install
+      register: td_agent_bit_new_install
+    - name: Attempt to Start Service as Installed by cmake
+      when:
+        - td_agent_bit_new_install is defined and td_agent_bit_new_install.changed
+      block:
+        - name: Attempt to Enable the td-agent-bit Service
+          become: true
+          service:
+            name: td-agent-bit
+            enabled: yes
+            state: started
+      rescue:
+        - name: "Rescue: Set flb_svc_failure Flag"
+          set_fact:
+            flb_svc_failure: true
+    - name: Rescue Upstart Service Install
+      when:
+        - flb_svc_failure | default(false)
+        - ((flb_service_mgr | default(ansible_service_mgr))) | lower == 'upstart'
+      block:
+        - name: Stat td-agent-bin Upstart Service File
+          become: true
+          stat:
+            path: "{{ flb_upstart_script }}"
+          register: flb_upstart_script_stat
+        - name: Manually Install Upstart Script
+          when:
+            - flb_upstart_script_stat is defined
+            - flb_upstart_script_stat.stat is not defined or not flb_upstart_script_stat.stat.exists
+          block:
+            - name: Find td-agent-bit binary location
+              shell: "which td-agent-bit | tr -d '[:space:]'"
+              register: flb_binary_location
+            - name: Set flb_binary Fact
+              set_fact:
+                flb_binary: "{{ flb_binary_location.stdout }}"
+            - name: Create td-agent-bit Upstart Service
+              become: true
+              template:
+                src: 'init/td-agent-bit.conf.j2'
+                dest: '/etc/init/td-agent-bit.conf'
+                mode: 0644
+                owner: root
+              register: td_agent_bit_upstart_templated
+            - name: Reload initctl Configuration
+              when:
+                - td_agent_bit_upstart_templated is defined
+                - td_agent_bit_upstart_templated.changed
+              become: true
+              command: "initctl reload-configuration"
+              notify: Restart td-agent-bit
+    - name: Rescue SystemD Service Install
+      when:
+        - flb_svc_failure | default(false)
+        - ((flb_service_mgr | default(ansible_service_mgr))) | lower == 'systemd'
+      block:
+        - name: Remove "{{ flb_pkgmgr_systemd_service }}" file
+          become: true
+          file:
+            path: "{{ flb_pkgmgr_systemd_service }}"
+            state: absent
+        - name: Remove "{{ flb_build_systemd_service }}" file
+          become: true
+          file:
+            path: "{{ flb_build_systemd_service }}"
+            state: absent
+        - name: Manually Install SystemD Script
+          block:
+            - name: Find td-agent-bit binary location
+              shell: "which td-agent-bit | tr -d '[:space:]'"
+              register: flb_binary_location
+            - name: Set flb_binary Fact
+              set_fact:
+                flb_binary: "{{ flb_binary_location.stdout }}"
+            - name: Create td-agent-bit SystemD Service
+              become: true
+              template:
+                src: 'init/td-agent-bit.service.j2'
+                dest: '{{ flb_build_systemd_service }}'
+                mode: 0644
+                owner: root
+              register: td_agent_upstart_templated
+            - name: Reload SystemD Daemon
+              when:
+                - td_agent_upstart_templated is defined
+                - td_agent_upstart_templated.changed
+              become: true
+              command: "systemctl daemon-reload"
+              notify: Restart td-agent-bit
 - name: Ensure td-agent-bit Service is enabled and started
   become: true
-  when:
-    - "'td-agent-bit' in ansible_facts.services or 'td-agent-bit.service' in ansible_facts.services"
   service:
     name: td-agent-bit
     enabled: yes
     state: started
 - name: Install logrotate
   when:
-    - flb_inputs.files is defined and flb_inputs.files|length > 0
+    - flb_inputs.files is defined
+    - flb_inputs.files|length > 0
   become: true
   package:
     name: logrotate

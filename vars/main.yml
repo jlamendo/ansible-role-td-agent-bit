@@ -5,3 +5,57 @@
 flb_parsers_dir: "{{ flb_conf_dir }}/parsers.d"
 flb_filters_dir: "{{ flb_conf_dir }}/filters.d"
 flb_includes_dir: "{{ flb_conf_dir }}/includes"
+
+# DO NOT EVER SET THIS TO ANOTHER VALUE. THIS IS VARIABLE INITIALIZATION, NOT ASSIGNMENT. 
+flb_install_state: {}
+
+flb_pkgmgr_systemd_service: "/usr/lib/systemd/system/td-agent-bit.service"
+flb_build_systemd_service: "/etc/systemd/system/td-agent-bit.service"
+flb_build_binary:  "{{ flb_build_dir }}/fluent-bit-{{ flb_build_vers }}/bin/td-agent-bit"
+
+
+flb_build_dependencies:
+  ubuntu:
+    all:
+      - build-essential
+      - bison
+      - libbison-dev
+      - flex
+      - libfl-dev
+      - pkg-config
+      - zlibc
+      - zlib1g-dev
+      - libpq-dev
+      - doxygen
+      - libgtest-dev
+      - libevent-dev
+    trusty:
+      - cmake3
+    xenial:
+      - cmake
+    bionic:
+      - cmake
+  debian:
+    all:
+      - build-essential
+      - bison
+      - libbison-dev
+      - flex
+      - libfl-dev
+      - pkg-config
+      - zlibc
+      - zlib1g-dev
+      - libpq-dev
+      - doxygen
+      - libgtest-dev
+      - libevent-dev
+    stretch:
+      - cmake
+    jessie:
+      - cmake
+    wheezy:
+      - cmake
+    buster:
+      - cmake
+      
+
