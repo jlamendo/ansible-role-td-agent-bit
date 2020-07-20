@@ -4,11 +4,6 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: UbuntuTrusty
-    box: ubuntu/trusty64
-    instance_raw_config_args:
-      - "vm.network 'forwarded_port', guest: 80, host: 8088"
-platforms:
   - name: CentOS7
     image: centos:7
     command: /sbin/init
