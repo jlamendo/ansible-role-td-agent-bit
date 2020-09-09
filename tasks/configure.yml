@@ -32,6 +32,7 @@
         state: directory
         mode: 0644
     - name: Template out Custom td-agent-bit Includes
+      become: true
       template:
         src: '{{ item }}'
         dest: '{{ flb_includes_dir }}/{{ (item | basename).split(".j2")[0] }}'
@@ -42,6 +43,7 @@
         - flb_includes | length >0
       notify: Restart td-agent-bit
     - name: Template out Custom td-agent-bit Parsers
+      become: true
       template:
         src: '{{ item }}'
         dest: '{{ flb_parsers_dir }}/{{ (item | basename).split(".j2")[0] }}'
@@ -52,6 +54,7 @@
         - flb_custom_parsers | length >0
       notify: Restart td-agent-bit
     - name: Template out Custom td-agent-bit lua filter sources
+      become: true
       template:
         src: '{{ item.key }}'
         dest: '{{ flb_filters_dir }}/{{ (item.key | basename).split(".j2")[0] }}'
@@ -86,7 +89,10 @@
         src: td-agent-bit.conf.j2
         dest: "{{ flb_conf_dir }}/{{ flb_conf_file }}"
       notify: Restart td-agent-bit
+
 - name: Check for logrotate Duplicates
+  when:
+    - not ansible_check_mode
   become: true
   shell:
     cmd: >-
@@ -99,6 +105,7 @@
   changed_when: logrotate_watched_files.rc != 0
 - name: Warn about duplicate logrotates
   when:
+    - not ansible_check_mode
     - flb_inputs.files is defined and flb_inputs.files | length > 0
     - item.rotate_enabled | default(tail_input.rotate_enabled)
     - item.path in ( logrotate_watched_files.stdout_lines | list )
