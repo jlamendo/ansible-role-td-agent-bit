@@ -33,20 +33,26 @@
 [INPUT]
     Name                tail
     Path                {{ item.path }}
+{% if item.path_key is defined or tail_input.path_key is defined %}
+    Path_Key            {{ item.path_key | default( tail_input.path_key ) }}
+{% endif %}
+{% if item.exclude_path is defined or tail_input.exclude_path is defined %}
+    Exclude_Path        {{ item.exclude_path | default(tail_input.exclude_path) }}
+{% endif %}
     Buffer_Chunk_Size   {{ item.buffer_chunk_sz | default(tail_input.buffer_chunk_sz) }}
     Buffer_Max_Size     {{ item.buffer_max_sz | default(tail_input.buffer_max_sz) }}
     DB                  {{ item.state_db | default( tail_input.state_db + '/' + (( item.path | basename | splitext)[0] | replace('*', '_all_' ))  + '.state' )}}
     DB.Sync             {{ item.state_db_sync | default( tail_input.state_db_sync )}}
     Mem_Buf_Limit       {{ item.mem_max_sz | default( tail_input.mem_max_sz )}}
     Skip_Long_Lines     {{ item.skip_long_lines | default( tail_input.skip_long_lines ) }}
-{% if item.exclude_path is defined or tail_input.exclude_path is defined %}
-    Exclude_Path        {{ item.exclude_path | default(tail_input.exclude_path) }}
-{% endif %}
 {% if item.parser is defined %}
     Parser              {{ item.parser }}
 {% endif %}
 {% if item.tag is defined %}
     Tag                 {{ item.tag }}
+{% endif %}
+{% if item.tag_regex is defined %}
+    Tag_Regex           {{ item.tag_regex }}
 {% endif %}
 {% endfor %}
 #### END FILE INPUTS  ####
