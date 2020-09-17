@@ -2,25 +2,25 @@
 #### BEGIN SERVICE CONFIG ####
 [SERVICE]
     Flush               {{ flb_svc_flush }}
-    Daemon              {{ (flb_svc_daemon | bool) | ternary('On', 'Off' ) }}
+    Daemon              {{ ( flb_svc_daemon | bool ) | ternary('On', 'Off' ) }}
     Log_Level           {{ flb_svc_log_level }}
     Parsers_File        parsers.conf
     Plugins_File        plugins.conf
 {% if flb_custom_parsers is defined and ( flb_custom_parsers | length > 0 ) %}
 #### SERVICE CONFIG     => BEGIN CUSTOM PARSERS ####
 {% for item in flb_custom_parsers %}
-    Parsers_File        {{ flb_parsers_dir }}/{{ (item | basename).split(".j2")[0] }}
+    Parsers_File        {{ flb_parsers_dir }}/{{ ( item | basename ).split(".j2")[0] }}
 {% endfor %}
 #### SERVICE CONFIG     => END CUSTOM PARSERS   ####
 {% endif %}
 
 #### SERVICE CONFIG     => BEGIN METRICS CONFIG ####
     HTTP_Server         {{ (flb_metrics_enable | bool) | ternary('On', 'Off') }}
-{% if  (flb_metrics_enable | bool) %}
+{% if  ( flb_metrics_enable | bool ) %}
 {% if ansible_default_ipv4["address"] | ipaddr('private') %}
     HTTP_Listen         {{ ansible_default_ipv4["address"] | ipaddr('private') }}
 {% elif flb_metrics_bind_cidr is defined %}
-    HTTP_Listen         {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr(flb_metrics_bind_cidr) | first }}
+    HTTP_Listen         {{ ansible_all_ipv4_addresses | ipaddr('private') | ipaddr( flb_metrics_bind_cidr ) | first }}
 {% endif %}
     HTTP_Port           {{ flb_metrics_bind_port }}
 {% endif %}
@@ -37,11 +37,11 @@
     Path_Key            {{ item.path_key | default( tail_input.path_key ) }}
 {% endif %}
 {% if item.exclude_path is defined or tail_input.exclude_path is defined %}
-    Exclude_Path        {{ item.exclude_path | default(tail_input.exclude_path) }}
+    Exclude_Path        {{ item.exclude_path | default( tail_input.exclude_path ) }}
 {% endif %}
-    Buffer_Chunk_Size   {{ item.buffer_chunk_sz | default(tail_input.buffer_chunk_sz) }}
-    Buffer_Max_Size     {{ item.buffer_max_sz | default(tail_input.buffer_max_sz) }}
-    DB                  {{ item.state_db | default( tail_input.state_db + '/' + (( item.path | basename | splitext)[0] | replace('*', '_all_' ))  + '.state' )}}
+    Buffer_Chunk_Size   {{ item.buffer_chunk_sz | default( tail_input.buffer_chunk_sz ) }}
+    Buffer_Max_Size     {{ item.buffer_max_sz | default( tail_input.buffer_max_sz ) }}
+    DB                  {{ item.state_db | default( tail_input.state_db + '/' + (( item.path | basename | splitext )[0] | replace('*', '_all_' ))  + '.state' )}}
     DB.Sync             {{ item.state_db_sync | default( tail_input.state_db_sync )}}
     Mem_Buf_Limit       {{ item.mem_max_sz | default( tail_input.mem_max_sz )}}
     Skip_Long_Lines     {{ item.skip_long_lines | default( tail_input.skip_long_lines ) }}
@@ -78,23 +78,23 @@
 {% for input in flb_inputs.custom %}
 [INPUT]
 {% for key in input %}
-    {{ "%-20s" | format(key,) }}{{ input[key] }}
+    {{ "%-20s" | format( key, ) }}{{ input[key] }}
 {% endfor %}
 {% endfor %}
 #### END CUSTOM INPUTS  ####
 {% endif %}
 {% if flb_filters_yaml is defined and (( flb_filters_yaml | from_yaml ) | length > 0 ) %}
 #### BEGIN CUSTOM FILTERS ####
-{% for flb_filter in ( flb_filters_yaml | from_yaml | sort(attribute='filter_priority') )  %}
+{% for flb_filter in ( flb_filters_yaml | from_yaml | sort( attribute='filter_priority' ) )  %}
 [FILTER]
 {% for key in flb_filter %}
 {% if key == "filter_priority" %}
 {% elif flb_filter[key] is not string and flb_filter[key] is not number %}
 {% for repeating_key_item in flb_filter[key] %}
-    {{ "%-20s" | format(key,) }}{{ repeating_key_item }}
+    {{ "%-20s" | format( key, ) }}{{ repeating_key_item }}
 {% endfor %}
 {% else %}
-    {{ "%-20s" | format(key,) }}{{ flb_filter[key] }}
+    {{ "%-20s" | format( key, ) }}{{ flb_filter[key] }}
 {% endif %}
 {% endfor %}
 {% endfor %}
@@ -129,7 +129,7 @@
 
 #### BEGIN CUSTOM INCLUDES ####
 {% for item in flb_includes %}
-@INCLUDE                {{ flb_includes_dir }}/{{ (item | basename).split(".j2")[0] }}
+@INCLUDE                {{ flb_includes_dir }}/{{ ( item | basename ).split(".j2")[0] }}
 {% endfor %}
 #### END CUSTOM INCLUDES  ####
 {% endif %}
