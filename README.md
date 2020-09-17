@@ -158,6 +158,23 @@ _Note: All of the tail plugin defaults can also be set on a per-input basis, usi
 - Description: The maximum memory that a single instance of the tail plugin can consume. The default is set quite permissively - if this limit is hit, the plugin will pause reading log lines from disk until the data is flushed to the outputs. 
 - Default: `tail_input.mem_max_sz: 56M`
 
+#### tail_input.path_key
+- Description: If supplied, td-agent-bit will automatically add the path of the file that this log event was collected from to the key specified here. Caution is advised here, as it may clobber existing data if the key conflicts with a key that already exists in the event.
+- Default: none
+- Example: `tail_input.path_key: event_source`
+
+#### tail_input.tag_regex
+- Description: A regular expression used to extract parts of the filename log events are collected from, in order to include them in the tag. Regular Expressions are in Ruby syntax, and must used named capture groups. These capture groups can then be referenced in Tag, and will be interpolated in to generate a pseudo-dynamic tag.
+- Default: none
+- Example: 
+>```
+> tail_input.tag_regex: "[^-]+-(?<fork_id>[\\d]+)-.*"
+> inputs:
+>   files:
+>     - name: example
+>       path: /var/log/example*.log
+>       tag: example_log.<fork_id>
+>```
 ___
 ### Auto-Logrotate Variables
 This role automatically generates logrotate configs for each input defined via `flb_inputs.files`. These variables define various defaults and options for the logrotate configs that will be generated. All of the options here can additionally be set as options on individual `flb_inputs.files` entries.
