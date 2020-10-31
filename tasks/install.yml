@@ -169,6 +169,7 @@
           - "-DFLB_BUFFERING=ON"
           - "-DFLB_WITHOUT_EXAMPLES=ON"
           - "-DFLB_TD=ON"
+          - "-DFLB_HTTP_SERVER={{ (flb_metrics_enable | bool) | ternary('ON', 'OFF') }}"
           - "-DFLB_IN_SYSTEMD={{ ansible_service_mgr | lower == 'systemd' | ternary('ON','OFF') }}"
           - "-DCMAKE_INSTALL_SYSCONFDIR={{ flb_sys_conf_dir }}"
           - "-DCMAKE_INSTALL_FULL_BINDIR={{ flb_build_install_prefix }}/bin"
